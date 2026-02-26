@@ -10,12 +10,15 @@ const MODELS = [
 
 export async function POST(req: NextRequest) {
   try {
-    const { apiKey } = await req.json();
+    const { apiKey, anthropicApiUrl } = await req.json();
     if (!apiKey) {
       return NextResponse.json({ error: "apiKey required" }, { status: 400 });
     }
 
-    const client = new Anthropic({ apiKey });
+    const config: { apiKey?: string; baseURL?: string } = {};
+    if (apiKey) config.apiKey = apiKey;
+    if (anthropicApiUrl) config.baseURL = anthropicApiUrl;
+    const client = new Anthropic(config);
 
     // Probe sequentially to avoid rate limits
     const available: Record<string, boolean> = {};

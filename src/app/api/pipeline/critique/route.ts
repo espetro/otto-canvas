@@ -5,7 +5,11 @@ export const maxDuration = 30;
 
 const DEFAULT_MODEL = "claude-opus-4-6";
 
-function getClient(apiKey?: string): Anthropic {
+function getClient(apiKey?: string, baseURL?: string): Anthropic {
+  if (apiKey && baseURL) return new Anthropic({ apiKey, baseURL });
+  if (apiKey) return new Anthropic({ apiKey });
+  return new Anthropic();
+}
   if (apiKey) return new Anthropic({ apiKey });
   return new Anthropic();
 }
@@ -18,9 +22,9 @@ function stripBase64Images(html: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { html, prompt, model, apiKey } = await req.json();
+    const { html, prompt, model, apiKey, anthropicApiUrl } = await req.json();
     const useModel = model || DEFAULT_MODEL;
-    const client = getClient(apiKey);
+    const client = getClient(apiKey, anthropicApiUrl);
 
     const stripped = stripBase64Images(html);
 

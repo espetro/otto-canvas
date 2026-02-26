@@ -13,7 +13,8 @@ const MODEL_FALLBACK_CHAIN = [
 
 const DEFAULT_MODEL = "claude-opus-4-6";
 
-function getClient(apiKey?: string): Anthropic {
+function getClient(apiKey?: string, baseURL?: string): Anthropic {
+  if (apiKey && baseURL) return new Anthropic({ apiKey, baseURL });
   if (apiKey) return new Anthropic({ apiKey });
   return new Anthropic();
 }
@@ -61,13 +62,13 @@ const VARIATION_STYLES = [
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, count = 4, revision, existingHtml, apiKey, model, variationIndex, concept, systemPrompt } = await req.json();
+    const { prompt, count = 4, revision, existingHtml, apiKey, anthropicApiUrl, model, variationIndex, concept, systemPrompt } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt required" }, { status: 400 });
     }
 
-    const client = getClient(apiKey);
+    const client = getClient(apiKey, anthropicApiUrl);
     const useModel = model || DEFAULT_MODEL;
 
     if (revision && existingHtml) {

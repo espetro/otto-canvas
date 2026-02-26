@@ -5,7 +5,11 @@ export const maxDuration = 300;
 
 const DEFAULT_MODEL = "claude-opus-4-6";
 
-function getClient(apiKey?: string): Anthropic {
+function getClient(apiKey?: string, baseURL?: string): Anthropic {
+  if (apiKey && baseURL) return new Anthropic({ apiKey, baseURL });
+  if (apiKey) return new Anthropic({ apiKey });
+  return new Anthropic();
+}
   if (apiKey) return new Anthropic({ apiKey });
   return new Anthropic();
 }
@@ -49,9 +53,9 @@ function parseHtmlWithSize(raw: string): { html: string; width?: number; height?
 
 export async function POST(req: NextRequest) {
   try {
-    const { html, prompt, width, height, model, apiKey } = await req.json();
+    const { html, prompt, width, height, model, apiKey, anthropicApiUrl } = await req.json();
     const useModel = model || DEFAULT_MODEL;
-    const client = getClient(apiKey);
+    const client = getClient(apiKey, anthropicApiUrl);
 
     const { stripped, restore } = stripBase64Images(html);
 

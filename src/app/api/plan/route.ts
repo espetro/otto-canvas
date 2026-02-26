@@ -3,20 +3,24 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 30;
 
-function getClient(apiKey?: string): Anthropic {
+function getClient(apiKey?: string, baseURL?: string): Anthropic {
+  if (apiKey && baseURL) return new Anthropic({ apiKey, baseURL });
+  if (apiKey) return new Anthropic({ apiKey });
+  return new Anthropic();
+}
   if (apiKey) return new Anthropic({ apiKey });
   return new Anthropic();
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, apiKey, model } = await req.json();
+    const { prompt, apiKey, anthropicApiUrl, model } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt required" }, { status: 400 });
     }
 
-    const client = getClient(apiKey);
+    const client = getClient(apiKey, anthropicApiUrl);
 
     const message = await client.messages.create({
       model: model || "claude-sonnet-4-5-20250514",

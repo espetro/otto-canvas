@@ -5,7 +5,11 @@ export const maxDuration = 300;
 
 const DEFAULT_MODEL = "claude-sonnet-4-20250514";
 
-function getClient(apiKey?: string): Anthropic {
+function getClient(apiKey?: string, baseURL?: string): Anthropic {
+  if (apiKey && baseURL) return new Anthropic({ apiKey, baseURL });
+  if (apiKey) return new Anthropic({ apiKey });
+  return new Anthropic();
+}
   if (apiKey) return new Anthropic({ apiKey });
   return new Anthropic();
 }
@@ -170,7 +174,11 @@ OUTPUT:
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const {
+      prompt, style, model, apiKey, systemPrompt, critique,
+      availableSources = [], revision, existingHtml,
+      contextImages = [], anthropicApiUrl,
+    } = body;
     const {
       prompt, style, model, apiKey, systemPrompt, critique,
       availableSources = [], revision, existingHtml,
@@ -178,7 +186,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     const useModel = model || DEFAULT_MODEL;
-    const client = getClient(apiKey);
+    const client = getClient(apiKey, anthropicApiUrl);
     const isRevision = !!(revision && existingHtml);
 
     let userContent: string;
