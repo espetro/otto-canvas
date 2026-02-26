@@ -29,7 +29,7 @@ import type {
 
 export default function Home() {
   const canvas = useCanvas();
-  const { settings, setSettings, isOwnKey, hasGeminiKey, availableModels, isProbing } = useSettings();
+  const { settings, setSettings, isOwnKey, hasGeminiKey, availableModels, isProbing, cachedModels } = useSettings();
   const onboarding = useOnboarding();
   const canvasElRef = useRef<HTMLDivElement | null>(null);
   const combinedCanvasRef: RefCallback<HTMLDivElement> = useCallback((el) => {
@@ -397,6 +397,7 @@ export default function Home() {
       const layoutResult = await pipelinePost("/api/pipeline/layout", {
         prompt, style, model: settings.model,
         apiKey: settings.apiKey || undefined,
+        anthropicApiUrl: settings.anthropicApiUrl || undefined,
         systemPrompt: settings.systemPrompt || undefined,
         critique, availableSources,
         ...(revisionOpts || {}),
@@ -468,6 +469,7 @@ export default function Home() {
             html: htmlForReview, prompt, width, height,
             model: settings.model,
             apiKey: settings.apiKey || undefined,
+            anthropicApiUrl: settings.anthropicApiUrl || undefined,
           }, signal);
           if (qaResult.html) {
             // Restore base64 images into reviewed HTML
@@ -507,6 +509,7 @@ export default function Home() {
           html: htmlForCritique, prompt,
           model: settings.model,
           apiKey: settings.apiKey || undefined,
+          anthropicApiUrl: settings.anthropicApiUrl || undefined,
         }, signal);
         critiqueText = critiqueResult.critique || undefined;
       } catch {
@@ -515,7 +518,7 @@ export default function Home() {
 
       return { html, label, width, height, critique: critiqueText, comment: aiComment };
     },
-    [settings.apiKey, settings.model, settings.systemPrompt, settings.geminiKey, settings.unsplashKey, settings.openaiKey, pipelinePost, capOversizedSections]
+    [settings.apiKey, settings.model, settings.systemPrompt, settings.geminiKey, settings.unsplashKey, settings.openaiKey, settings.anthropicApiUrl, pipelinePost, capOversizedSections]
   );
 
   const handleGenerate = useCallback(
@@ -540,7 +543,13 @@ export default function Home() {
           const planRes = await fetch("/api/plan", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt, count: iterationCount, apiKey: settings.apiKey || undefined, model: settings.model }),
+            body: JSON.stringify({ 
+              prompt, 
+              count: iterationCount, 
+              apiKey: settings.apiKey || undefined, 
+              anthropicApiUrl: settings.anthropicApiUrl || undefined,
+              model: settings.model 
+            }),
             signal: controller.signal,
           });
           if (planRes.ok) {
@@ -1491,9 +1500,9 @@ export default function Home() {
           isOwnKey={isOwnKey}
           availableModels={availableModels}
           isProbing={isProbing}
+          cachedModels={cachedModels}
         />
       )}
-
       {/* Reset confirm dialog */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center">

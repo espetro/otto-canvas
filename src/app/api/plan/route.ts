@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 30;
+export const MAX_DURATION_IN_SECONDS = 30;
 
 function getClient(apiKey?: string, baseURL?: string): Anthropic {
   if (apiKey && baseURL) return new Anthropic({ apiKey, baseURL });
@@ -9,10 +9,17 @@ function getClient(apiKey?: string, baseURL?: string): Anthropic {
   return new Anthropic();
 }
 
+interface RouteRequest {
+  prompt?: string;
+  apiKey?: string;
+  anthropicApiUrl?: string;
+  model: string;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, apiKey, anthropicApiUrl, model } = await req.json();
+    const data = await req.json();
+    const { prompt, apiKey, anthropicApiUrl, model } = data as RouteRequest;
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt required" }, { status: 400 });
@@ -21,7 +28,7 @@ export async function POST(req: NextRequest) {
     const client = getClient(apiKey, anthropicApiUrl);
 
     const message = await client.messages.create({
-      model: model || "claude-sonnet-4-5-20250514",
+      model,
       max_tokens: 300,
       messages: [
         {
@@ -54,7 +61,7 @@ Respond in EXACTLY this JSON format, nothing else:
     });
 
     const text = message.content[0].type === "text" ? message.content[0].text : "";
-    
+
     try {
       // Extract JSON from response (handle markdown wrapping)
       const jsonMatch = text.match(/\{[\s\S]*\}/);

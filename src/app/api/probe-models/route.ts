@@ -1,16 +1,17 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 
-const MODELS = [
-  "claude-opus-4-6",
-  "claude-sonnet-4-5",
-  "claude-opus-4",
-  "claude-sonnet-4",
-];
+interface RouteRequest {
+  apiKey?: string;
+  anthropicApiUrl?: string;
+  modelList: string[];
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { apiKey, anthropicApiUrl } = await req.json();
+    const data = await req.json();
+    const { apiKey, anthropicApiUrl, modelList } = data as RouteRequest;
+
     if (!apiKey) {
       return NextResponse.json({ error: "apiKey required" }, { status: 400 });
     }
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     // Probe sequentially to avoid rate limits
     const available: Record<string, boolean> = {};
 
-    for (const model of MODELS) {
+    for (const model of modelList) {
       try {
         await client.messages.create({
           model,
@@ -34,9 +35,14 @@ export async function POST(req: NextRequest) {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         console.log(`Probe ${model}:`, msg);
-        
+
         // Only mark unavailable for definitive "not found" errors
-        if (msg.includes("not_found") || msg.includes("404") || msg.includes("Could not resolve") || msg.includes("does not exist")) {
+        if (
+          msg.includes("not_found") ||
+          msg.includes("404") ||
+          msg.includes("Could not resolve") ||
+          msg.includes("does not exist")
+        ) {
           available[model] = false;
         } else {
           // Rate limit, overloaded, timeout, or any other error — assume available

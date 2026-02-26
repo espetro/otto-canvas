@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MODELS, type Settings } from "@/hooks/use-settings";
+import { type Settings, type ModelInfo } from "@/hooks/use-settings";
 
 const SYSTEM_PROMPT_PRESETS = [
   {
@@ -265,9 +265,9 @@ interface SettingsModalProps {
   isOwnKey: boolean;
   availableModels: Record<string, boolean> | null;
   isProbing: boolean;
+  cachedModels: ModelInfo[];
 }
-
-export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, availableModels, isProbing }: SettingsModalProps) {
+export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, availableModels, isProbing, cachedModels }: SettingsModalProps) {
   const [key, setKey] = useState(settings.apiKey);
   const [geminiKey, setGeminiKey] = useState(settings.geminiKey);
   const [unsplashKey, setUnsplashKey] = useState(settings.unsplashKey);
@@ -415,7 +415,7 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               )}
             </div>
             <div className="space-y-1">
-              {MODELS.map((m) => {
+              {cachedModels.map((m) => {
                 const available = isModelAvailable(m.id);
                 const isSelected = settings.model === m.id;
 
@@ -434,8 +434,8 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
                   >
                     <div className="flex items-center gap-2">
                       <div>
-                        <span className="text-[13px] font-medium">{m.label}</span>
-                        <span className="text-[11px] text-gray-500 ml-2">{m.desc}</span>
+                        <span className="text-[13px] font-medium">{m.displayName}</span>
+                        <span className="text-[11px] text-gray-500 ml-2">{m.description}</span>
                       </div>
                       {!available && isOwnKey && (
                         <span className="text-[10px] text-gray-500 bg-gray-200/50 px-1.5 py-0.5 rounded">
@@ -454,7 +454,7 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
             </div>
             {isOwnKey && availableModels && (
               <p className="mt-2 text-[10px] text-gray-500">
-                {Object.values(availableModels).filter(Boolean).length} of {MODELS.length} models available on your key
+                {Object.values(availableModels).filter(Boolean).length} of {cachedModels.length} models available on your key
               </p>
             )}
           </div>
@@ -632,7 +632,7 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
         {/* Footer */}
         <div className="p-6 border-t border-gray-200/30 flex items-center justify-between">
           <span className="text-[11px] text-gray-500">
-            {isOwnKey ? "🔑 Own key" : "🌐 Demo key"} · {MODELS.find((m) => m.id === settings.model)?.label}
+            {isOwnKey ? "🔑 Own key" : "🌐 Demo key"} · {cachedModels.find((m) => m.id === settings.model)?.displayName || settings.model}
             {(settings.unsplashKey || settings.openaiKey || settings.geminiKey) && ` · 🖼️ ${[settings.unsplashKey && "Unsplash", settings.openaiKey && "DALL·E", settings.geminiKey && "Gemini"].filter(Boolean).join(", ")}`}
           </span>
           <button

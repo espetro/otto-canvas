@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300;
 
-// Fallback chain — if requested model fails, try next one down
-const MODEL_FALLBACK_CHAIN = [
+// Default fallback chain — if requested model fails, try next one down
+// This will be overridden by modelList from request if provided
+const DEFAULT_FALLBACK_CHAIN = [
   "claude-opus-4-6",
   "claude-sonnet-4-5",
   "claude-opus-4",
@@ -19,22 +20,28 @@ function getClient(apiKey?: string, baseURL?: string): Anthropic {
   return new Anthropic();
 }
 
-/** Try a model call, falling back to cheaper models on "not found" errors */
+/** Try a model call, falling back to other models on "not found" errors */
 async function callWithFallback(
   client: Anthropic,
   preferredModel: string,
   messages: Anthropic.MessageCreateParams["messages"],
-  maxTokens: number
+  maxTokens: number,
+  modelList?: string[]
 ): Promise<{ result: Anthropic.Message; usedModel: string }> {
+  // Build fallback list from provided modelList or use default chain
+  const fallbackChain = modelList?.length ? modelList : DEFAULT_FALLBACK_CHAIN;
+  
   // Build fallback list: preferred model first, then remaining chain models
-  const idx = MODEL_FALLBACK_CHAIN.indexOf(preferredModel);
+  const idx = fallbackChain.indexOf(preferredModel);
   const fallbacks =
     idx >= 0
-      ? MODEL_FALLBACK_CHAIN.slice(idx)
-      : [preferredModel, ...MODEL_FALLBACK_CHAIN];
+      ? [preferredModel, ...fallbackChain.slice(0, idx), ...fallbackChain.slice(idx + 1)]
+      : [preferredModel, ...fallbackChain];
+  // Remove duplicates while preserving order
+  const uniqueFallbacks = [...new Set(fallbacks)];
 
   let lastError: unknown;
-  for (const model of fallbacks) {
+  for (const model of uniqueFallbacks) {
     try {
       const result = await client.messages.create({ model, max_tokens: maxTokens, messages });
       return { result, usedModel: model };
@@ -62,7 +69,7 @@ const VARIATION_STYLES = [
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, count = 4, revision, existingHtml, apiKey, anthropicApiUrl, model, variationIndex, concept, systemPrompt } = await req.json();
+    const { prompt, count = 4, revision, existingHtml, apiKey, anthropicApiUrl, model, variationIndex, concept, systemPrompt, modelList } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt required" }, { status: 400 });
@@ -73,21 +80,21 @@ export async function POST(req: NextRequest) {
 
     if (revision && existingHtml) {
       const style = variationIndex !== undefined ? VARIATION_STYLES[variationIndex] || VARIATION_STYLES[0] : undefined;
-      const result = await generateSingle(client, useModel, prompt, revision, existingHtml, style, variationIndex, systemPrompt);
+      const result = await generateSingle(client, useModel, prompt, revision, existingHtml, style, variationIndex, systemPrompt, modelList);
       return NextResponse.json({ iteration: result });
     }
 
     // Single variation mode (sequential generation from frontend)
     if (variationIndex !== undefined) {
       const style = concept || VARIATION_STYLES[variationIndex] || VARIATION_STYLES[0];
-      const result = await generateVariation(client, useModel, prompt, style, variationIndex, systemPrompt);
+      const result = await generateVariation(client, useModel, prompt, style, variationIndex, systemPrompt, modelList);
       return NextResponse.json({ iteration: result });
     }
 
     // Legacy: generate all at once
     const variations = VARIATION_STYLES.slice(0, count);
     const results = await Promise.all(
-      variations.map((style, i) => generateVariation(client, useModel, prompt, style, i))
+      variations.map((style, i) => generateVariation(client, useModel, prompt, style, i, undefined, modelList))
     );
 
     return NextResponse.json({ iterations: results });
@@ -110,7 +117,8 @@ async function generateVariation(
   prompt: string,
   style: string,
   index: number,
-  systemPrompt?: string
+  systemPrompt?: string,
+  modelList?: string[]
 ): Promise<{ html: string; label: string; width?: number; height?: number }> {
   const customInstructions = systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n` : "";
 
@@ -172,7 +180,7 @@ OUTPUT RULES:
 - IMPORTANT: Keep CSS concise. No animations, no transitions, no keyframes.
 - CRITICAL: Generate exactly ONE design per response. Never include multiple designs, multiple ad variations, or multiple versions in one HTML file. The system handles variations externally — you only produce a single, complete design each time.`,
     },
-  ], 8192);
+  ], 8192, modelList);
 
   const html =
     message.content[0].type === "text" ? message.content[0].text : "";
@@ -195,7 +203,8 @@ async function generateSingle(
   existingHtml: string,
   styleVariation?: string,
   variationIndex?: number,
-  systemPrompt?: string
+  systemPrompt?: string,
+  modelList?: string[]
 ): Promise<{ html: string; label: string; width?: number; height?: number }> {
   const customInstructions = systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n` : "";
   const styleInstruction = styleVariation
@@ -249,7 +258,7 @@ OUTPUT FORMAT:
 - Self-contained, no external dependencies
 - Use the same dimensions as the original`,
     },
-  ], 8192);
+  ], 8192, modelList);
 
   const html =
     message.content[0].type === "text" ? message.content[0].text : "";
