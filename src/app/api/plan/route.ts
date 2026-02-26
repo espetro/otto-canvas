@@ -8,9 +8,7 @@ function getClient(apiKey?: string, baseURL?: string): Anthropic {
   if (apiKey) return new Anthropic({ apiKey });
   return new Anthropic();
 }
-  if (apiKey) return new Anthropic({ apiKey });
-  return new Anthropic();
-}
+
 
 export async function POST(req: NextRequest) {
   try {

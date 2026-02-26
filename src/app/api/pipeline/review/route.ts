@@ -10,9 +10,7 @@ function getClient(apiKey?: string, baseURL?: string): Anthropic {
   if (apiKey) return new Anthropic({ apiKey });
   return new Anthropic();
 }
-  if (apiKey) return new Anthropic({ apiKey });
-  return new Anthropic();
-}
+
 
 function stripBase64Images(html: string): { stripped: string; restore: (output: string) => string } {
   const images: string[] = [];

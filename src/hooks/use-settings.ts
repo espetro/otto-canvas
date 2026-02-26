@@ -35,7 +35,7 @@ export function useSettings() {
     openaiKey: "",
     anthropicApiUrl: "",
     model: DEFAULT_MODEL,
-    model: DEFAULT_MODEL,
+
     systemPrompt: "",
     systemPromptPreset: "custom",
     conceptCount: 4,
@@ -57,7 +57,7 @@ export function useSettings() {
           openaiKey: parsed.openaiKey || "",
           anthropicApiUrl: parsed.anthropicApiUrl || "",
           model: parsed.model || DEFAULT_MODEL,
-          model: parsed.model || DEFAULT_MODEL,
+
           systemPrompt: parsed.systemPrompt || "",
           systemPromptPreset: parsed.systemPromptPreset || "custom",
           conceptCount: parsed.conceptCount || 4,

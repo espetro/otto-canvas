@@ -10,9 +10,7 @@ function getClient(apiKey?: string, baseURL?: string): Anthropic {
   if (apiKey) return new Anthropic({ apiKey });
   return new Anthropic();
 }
-  if (apiKey) return new Anthropic({ apiKey });
-  return new Anthropic();
-}
+
 
 function parseHtmlWithSize(raw: string): { html: string; width?: number; height?: number; comment?: string } {
   let cleaned = raw.trim();
@@ -174,16 +172,13 @@ OUTPUT:
 
 export async function POST(req: NextRequest) {
   try {
+    const body = await req.json();
     const {
       prompt, style, model, apiKey, systemPrompt, critique,
       availableSources = [], revision, existingHtml,
       contextImages = [], anthropicApiUrl,
     } = body;
-    const {
-      prompt, style, model, apiKey, systemPrompt, critique,
-      availableSources = [], revision, existingHtml,
-      contextImages = [],
-    } = body;
+
 
     const useModel = model || DEFAULT_MODEL;
     const client = getClient(apiKey, anthropicApiUrl);
