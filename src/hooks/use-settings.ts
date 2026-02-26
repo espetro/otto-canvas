@@ -7,6 +7,7 @@ export interface Settings {
   geminiKey: string;
   unsplashKey: string;
   openaiKey: string;
+  anthropicApiUrl: string;
   model: string;
   systemPrompt: string;
   systemPromptPreset: string;
@@ -32,6 +33,8 @@ export function useSettings() {
     geminiKey: "",
     unsplashKey: "",
     openaiKey: "",
+    anthropicApiUrl: "",
+    model: DEFAULT_MODEL,
     model: DEFAULT_MODEL,
     systemPrompt: "",
     systemPromptPreset: "custom",
@@ -52,6 +55,8 @@ export function useSettings() {
           geminiKey: parsed.geminiKey || "",
           unsplashKey: parsed.unsplashKey || "",
           openaiKey: parsed.openaiKey || "",
+          anthropicApiUrl: parsed.anthropicApiUrl || "",
+          model: parsed.model || DEFAULT_MODEL,
           model: parsed.model || DEFAULT_MODEL,
           systemPrompt: parsed.systemPrompt || "",
           systemPromptPreset: parsed.systemPromptPreset || "custom",
