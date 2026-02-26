@@ -272,6 +272,8 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
   const [geminiKey, setGeminiKey] = useState(settings.geminiKey);
   const [unsplashKey, setUnsplashKey] = useState(settings.unsplashKey);
   const [openaiKey, setOpenaiKey] = useState(settings.openaiKey);
+  const [anthropicApiUrl, setAnthropicApiUrl] = useState(settings.anthropicApiUrl);
+
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -358,6 +360,44 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               Your key is stored in localStorage. It passes through our server to reach Anthropic but is never logged or persisted.
             </p>
           </div>
+
+          {/* Anthropic API URL */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[12px] font-medium text-gray-500 uppercase tracking-wider">
+                Anthropic API URL
+              </label>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={anthropicApiUrl}
+                onChange={(e) => setAnthropicApiUrl(e.target.value)}
+                placeholder="https://api.anthropic.com"
+                className="flex-1 text-[13px] text-gray-800 placeholder-gray-400/50 bg-white/70 backdrop-blur-sm rounded-xl px-5 py-3.5 outline-none border border-white/50 focus:border-blue-300/60 focus:bg-white/90 transition-all font-mono"
+              />
+              {anthropicApiUrl && anthropicApiUrl !== settings.anthropicApiUrl && (
+                <button
+                  onClick={() => onUpdate({ anthropicApiUrl: anthropicApiUrl.trim() })}
+                  className="text-[12px] font-medium text-white bg-blue-500/90 hover:bg-blue-500 px-4 py-2.5 rounded-xl transition-all shrink-0"
+                >
+                  Save
+                </button>
+              )}
+            </div>
+            {settings.anthropicApiUrl && (
+              <button
+                onClick={() => { setAnthropicApiUrl(""); onUpdate({ anthropicApiUrl: "" }); }}
+                className="mt-2 text-[11px] text-gray-500 hover:text-red-500 transition-colors"
+              >
+                Remove URL
+              </button>
+            )}
+            <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">
+              Optional. Override the default Anthropic API endpoint (e.g., for proxies or custom deployments).
+            </p>
+          </div>
+
 
           {/* Model Selector */}
           <div>
@@ -603,6 +643,7 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               if (geminiKey.trim() !== settings.geminiKey) updates.geminiKey = geminiKey.trim();
               if (unsplashKey.trim() !== settings.unsplashKey) updates.unsplashKey = unsplashKey.trim();
               if (openaiKey.trim() !== settings.openaiKey) updates.openaiKey = openaiKey.trim();
+              if (anthropicApiUrl.trim() !== settings.anthropicApiUrl) updates.anthropicApiUrl = anthropicApiUrl.trim();
               if (Object.keys(updates).length) onUpdate(updates);
               onClose();
             }}
