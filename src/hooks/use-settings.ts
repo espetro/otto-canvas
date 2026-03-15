@@ -62,7 +62,8 @@ export function useSettings() {
     showZoomControls: false,
   });
   const [loaded, setLoaded] = useState(false);
-  const [cachedModels, setCachedModels] = useState<ModelInfo[]>(FALLBACK_MODELS);
+  const [cachedModels, setCachedModels] = useState<ModelInfo[]>([]);
+  const [modelsFetchError, setModelsFetchError] = useState(false);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelsCacheTime, setModelsCacheTime] = useState<number | null>(null);
   // Track last fetched credentials to detect changes
@@ -88,15 +89,15 @@ export function useSettings() {
           quickMode: parsed.quickMode ?? false,
           showZoomControls: parsed.showZoomControls ?? false,
         });
-      }
-      // Load cached models from localStorage
-      const cachedRaw = localStorage.getItem(CACHED_MODELS_KEY);
-      const cachedTimeRaw = localStorage.getItem(CACHED_MODELS_TIMESTAMP_KEY);
-      if (cachedRaw) {
-        setCachedModels(JSON.parse(cachedRaw));
-      }
-      if (cachedTimeRaw) {
-        setModelsCacheTime(parseInt(cachedTimeRaw, 10));
+        // Load cached models from localStorage (only if API key is stored)
+        const cachedRaw = localStorage.getItem(CACHED_MODELS_KEY);
+        const cachedTimeRaw = localStorage.getItem(CACHED_MODELS_TIMESTAMP_KEY);
+        if (cachedRaw && parsed.apiKey) {
+          setCachedModels(JSON.parse(cachedRaw));
+        }
+        if (cachedTimeRaw) {
+          setModelsCacheTime(parseInt(cachedTimeRaw, 10));
+        }
       }
     } catch {}
     setLoaded(true);
@@ -116,8 +117,8 @@ export function useSettings() {
   useEffect(() => {
     if (!loaded) return;
     if (!settings.apiKey) {
-      // No API key, use fallback models
-      setCachedModels(FALLBACK_MODELS);
+      setCachedModels([]);
+      setModelsFetchError(false);
       setLastFetchedKey("");
       setLastFetchedUrl("");
       return;
@@ -152,6 +153,7 @@ export function useSettings() {
           const data = await response.json();
           if (data.models && data.models.length > 0) {
             setCachedModels(data.models);
+            setModelsFetchError(false);
             setModelsCacheTime(now);
             setLastFetchedKey(settings.apiKey);
             setLastFetchedUrl(settings.anthropicApiUrl);
@@ -164,7 +166,8 @@ export function useSettings() {
         }
       } catch (err) {
         console.error("Failed to fetch models:", err);
-        // Keep existing cached models or fallbacks on error
+        setCachedModels(FALLBACK_MODELS);
+        setModelsFetchError(true);
       } finally {
         setIsLoadingModels(false);
       }
@@ -190,6 +193,7 @@ export function useSettings() {
     loaded, 
     availableModels, 
     isProbing: isLoadingModels,
-    cachedModels 
+    cachedModels,
+    modelsFetchError,
   };
 }

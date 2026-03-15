@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import type { ToolMode } from "@/lib/types";
-import { MODELS } from "@/hooks/use-settings";
+import { type ModelInfo, FALLBACK_MODELS } from "@/hooks/use-settings";
 
 interface ToolbarProps {
   mode: ToolMode;
@@ -18,6 +18,7 @@ interface ToolbarProps {
   onImport: () => void;
   isOwnKey: boolean;
   model: string;
+  cachedModels: ModelInfo[];
   hasFrames: boolean;
   showZoomControls: boolean;
   onToggleZoomControls: () => void;
@@ -37,11 +38,15 @@ export function Toolbar({
   onImport,
   isOwnKey,
   model,
+  cachedModels,
   hasFrames,
   showZoomControls,
   onToggleZoomControls,
 }: ToolbarProps) {
-  const modelLabel = MODELS.find((m) => m.id === model)?.label || "Sonnet 4.5";
+  const modelLabel =
+    cachedModels.find((m) => m.id === model)?.displayName ??
+    FALLBACK_MODELS.find((m) => m.id === model)?.displayName ??
+    model;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 

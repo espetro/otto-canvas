@@ -29,7 +29,7 @@ import type {
 
 export default function Home() {
   const canvas = useCanvas();
-  const { settings, setSettings, isOwnKey, hasGeminiKey, availableModels, isProbing, cachedModels } = useSettings();
+  const { settings, setSettings, isOwnKey, hasGeminiKey, availableModels, isProbing, cachedModels, modelsFetchError } = useSettings();
   const onboarding = useOnboarding();
   const canvasElRef = useRef<HTMLDivElement | null>(null);
   const combinedCanvasRef: RefCallback<HTMLDivElement> = useCallback((el) => {
@@ -1446,6 +1446,7 @@ export default function Home() {
         onImport={handleImportOtto}
         isOwnKey={isOwnKey}
         model={settings.model}
+        cachedModels={cachedModels}
         hasFrames={groups.length > 0}
         showZoomControls={settings.showZoomControls}
         onToggleZoomControls={() => setSettings({ showZoomControls: !settings.showZoomControls })}
@@ -1501,6 +1502,7 @@ export default function Home() {
           availableModels={availableModels}
           isProbing={isProbing}
           cachedModels={cachedModels}
+          modelsFetchError={modelsFetchError}
         />
       )}
       {/* Reset confirm dialog */}
