@@ -56,3 +56,14 @@ export interface CanvasImage {
 }
 
 export type ToolMode = "select" | "comment";
+
+export type ResizeHandle = "nw" | "ne" | "sw" | "se";
+
+export interface ResizeState {
+  itemId: string;
+  handle: ResizeHandle;
+  startMouse: Point;
+  startDimensions: { width: number; height: number };
+  startPosition: Point;
+  aspectRatio: number;
+}
