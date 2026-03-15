@@ -323,7 +323,7 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-[12px] font-medium text-gray-500 uppercase tracking-wider">
-                Anthropic API Key
+                AI Model API Key
               </label>
               {isOwnKey && (
                 <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50/80 px-2 py-0.5 rounded-full">
@@ -357,7 +357,7 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               </button>
             )}
             <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">
-              Your key is stored in localStorage. It passes through our server to reach Anthropic but is never logged or persisted.
+              Your key is stored in localStorage. It passes through our server to reach your AI provider but is never logged or persisted.
             </p>
           </div>
 
@@ -365,7 +365,7 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-[12px] font-medium text-gray-500 uppercase tracking-wider">
-                Anthropic API URL
+                AI Model API URL
               </label>
             </div>
             <div className="flex gap-2">
@@ -394,7 +394,7 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               </button>
             )}
             <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">
-              Optional. Override the default Anthropic API endpoint (e.g., for proxies or custom deployments).
+              Optional. Override the default API endpoint (e.g., for proxies or custom deployments).
             </p>
           </div>
 
@@ -472,7 +472,7 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               )}
             </div>
             <p className="text-[11px] text-gray-500 mb-4 leading-relaxed">
-              Add API keys to enable real images in your designs. Claude automatically picks the best source for each image — photos from Unsplash, illustrations from DALL·E, design assets from Gemini.
+              Add API keys to enable real images in your designs. Your AI model automatically picks the best source for each image — photos from Unsplash, illustrations from DALL·E, design assets from Gemini.
             </p>
 
             <div className="space-y-3">

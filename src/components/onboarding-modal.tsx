@@ -34,10 +34,10 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
         {/* Anthropic Key (required) */}
         <div className="mb-5">
           <label className="block text-[11px] font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
-            Anthropic API Key <span className="text-red-400">*</span>
+            AI Model API Key <span className="text-red-400">*</span>
           </label>
           <p className="text-[11px] text-gray-500 mb-2">
-            Powers design generation with Claude.
+            Powers design generation with your AI model.
           </p>
           <div className="relative">
             <input
@@ -64,6 +64,9 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
           >
             Get a key at console.anthropic.com →
           </a>
+          <p className="mt-1.5 text-[10px] text-gray-500">
+            Works with any Anthropic-compatible API (OpenRouter, AWS Bedrock, etc.)
+          </p>
         </div>
 
         {/* Image Sources (optional, collapsible) */}
@@ -79,7 +82,7 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
           {showImageKeys && (
             <div className="space-y-3 mt-2">
               <p className="text-[11px] text-gray-500 leading-relaxed">
-                Add any of these keys to enable real images. Claude picks the best source for each image automatically.
+                Add any of these keys to enable real images. Your AI model picks the best source for each image automatically.
               </p>
 
               {/* Gemini */}
@@ -153,7 +156,7 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
 
         {/* Privacy note */}
         <p className="mt-4 text-[10px] text-gray-500 text-center leading-relaxed">
-          Keys are stored locally in your browser. They are never sent to our servers — API calls go directly to Anthropic and Google.
+          Keys are stored locally in your browser. They are never sent to our servers — API calls go directly to your AI provider and Google.
         </p>
       </div>
     </div>
