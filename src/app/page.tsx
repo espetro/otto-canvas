@@ -1364,7 +1364,7 @@ export default function Home() {
             handleImageDragMove(e);
           } else if (draggingId) {
             handleFrameDragMove(e);
-          } else if (isResizing) {
+          } else if (resizeRef.current) {
             handleResizeMove(e);
           } else if (rubberBand) {
             setRubberBand((prev) => prev ? { ...prev, currentX: e.clientX, currentY: e.clientY } : null);
@@ -1377,7 +1377,7 @@ export default function Home() {
             handleImageDragEnd();
           } else if (draggingId) {
             handleFrameDragEnd();
-          } else if (isResizing) {
+          } else if (resizeRef.current) {
             handleResizeEnd();
           } else if (rubberBand) {
             // Calculate rubber band rect in canvas coordinates
@@ -1424,7 +1424,7 @@ export default function Home() {
           }
         }}
         onMouseLeave={() => {
-          if (draggingImageId) { handleImageDragEnd(); } else if (draggingId) { handleFrameDragEnd(); } else if (isResizing) { handleResizeEnd(); } else { setRubberBand(null); canvas.onMouseUp(); }
+          if (draggingImageId) { handleImageDragEnd(); } else if (draggingId) { handleFrameDragEnd(); } else if (resizeRef.current) { handleResizeEnd(); } else { setRubberBand(null); canvas.onMouseUp(); }
         }}
         onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }}
         onDrop={(e) => {
