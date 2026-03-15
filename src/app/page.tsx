@@ -1445,7 +1445,7 @@ export default function Home() {
           {canvasImages.map((img) => (
             <div
               key={img.id}
-              className={`absolute group rounded-lg overflow-hidden shadow-md transition-shadow ${
+              className={`relative absolute group rounded-lg overflow-hidden shadow-md transition-shadow ${
                 selectedIds.has(img.id)
                   ? "ring-2 ring-blue-500 border-blue-400/50 shadow-lg"
                   : "border border-white/40 hover:shadow-lg"
@@ -1484,6 +1484,27 @@ export default function Home() {
               <span className="absolute bottom-1 left-1 right-1 text-[9px] text-white bg-black/50 rounded px-1 py-0.5 truncate opacity-0 group-hover:opacity-100 transition-opacity">
                 {img.name}
               </span>
+              {/* Resize handles — visible when single image selected in select mode */}
+              {selectedIds.has(img.id) && selectedIds.size === 1 && isSelectMode && !draggingImageId && !isResizing && (
+                <>
+                  <div
+                    className="resize-handle resize-handle-nw"
+                    onMouseDown={(e) => { e.stopPropagation(); handleResizeStart(img.id, "nw", e.clientX, e.clientY); }}
+                  />
+                  <div
+                    className="resize-handle resize-handle-ne"
+                    onMouseDown={(e) => { e.stopPropagation(); handleResizeStart(img.id, "ne", e.clientX, e.clientY); }}
+                  />
+                  <div
+                    className="resize-handle resize-handle-sw"
+                    onMouseDown={(e) => { e.stopPropagation(); handleResizeStart(img.id, "sw", e.clientX, e.clientY); }}
+                  />
+                  <div
+                    className="resize-handle resize-handle-se"
+                    onMouseDown={(e) => { e.stopPropagation(); handleResizeStart(img.id, "se", e.clientX, e.clientY); }}
+                  />
+                </>
+              )}
             </div>
           ))}
 
