@@ -4,3 +4,8 @@ node_modules/
 .env.local
 .vercel
 .env*.local
+.sisyphus/
+*.tsbuildinfo
+*.js
+tmp/
+.DS_STORE
