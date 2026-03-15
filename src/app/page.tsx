@@ -25,7 +25,9 @@ import type {
   CommentMessage,
   Point,
   CanvasImage,
+  ResizeHandle,
 } from "@/lib/types";
+import { calculateNewDimensions } from "@/lib/resize-utils";
 
 export default function Home() {
   const canvas = useCanvas();
@@ -64,6 +66,18 @@ export default function Home() {
     startPos: Point;
   } | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  // Resize state for resizing frames and images
+  const resizeRef = useRef<{
+    itemId: string;
+    handle: ResizeHandle;
+    startMouse: { x: number; y: number };   // raw screen coords (clientX/Y)
+    startDimensions: { width: number; height: number };
+    startPosition: { x: number; y: number }; // canvas coords
+    aspectRatio: number;
+  } | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+
   const [activeComment, setActiveComment] = useState<CommentType | null>(null);
   const [activeCommentIterationId, setActiveCommentIterationId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -181,6 +195,29 @@ export default function Home() {
         setSpaceHeld(true);
       }
       if (e.key === "Escape") {
+        // Cancel active resize — restore original dimensions
+        if (resizeRef.current) {
+          const { itemId, startDimensions, startPosition } = resizeRef.current;
+          setGroups((prev) =>
+            prev.map((g) => ({
+              ...g,
+              iterations: g.iterations.map((iter) =>
+                iter.id === itemId
+                  ? { ...iter, width: startDimensions.width, height: startDimensions.height, position: startPosition }
+                  : iter
+              ),
+            }))
+          );
+          setCanvasImages((prev) =>
+            prev.map((img) =>
+              img.id === itemId
+                ? { ...img, width: startDimensions.width, height: startDimensions.height, position: startPosition }
+                : img
+            )
+          );
+          resizeRef.current = null;
+          setIsResizing(false);
+        }
         setCommentDraft(null);
         setActiveComment(null);
         setSelectedIds(new Set());
@@ -201,11 +238,11 @@ export default function Home() {
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-    };
-  }, [selectedIds]);
+      return () => {
+        window.removeEventListener("keydown", onKeyDown);
+        window.removeEventListener("keyup", onKeyUp);
+      };
+  }, [selectedIds, setGroups, setCanvasImages, setIsResizing, resizeRef]);
 
   // Grid positioning — 2 columns, centered in viewport
   const H_GAP = 60;
@@ -1207,6 +1244,97 @@ export default function Home() {
     setDraggingId(null);
   }, []);
 
+  const handleResizeStart = useCallback(
+    (itemId: string, handle: ResizeHandle, clientX: number, clientY: number) => {
+      if (toolMode !== "select" || spaceHeld) return;
+
+      let width = 0, height = 0;
+      let position = { x: 0, y: 0 };
+      let found = false;
+
+      for (const group of groups) {
+        for (const iter of group.iterations) {
+          if (iter.id === itemId) {
+            width = iter.width;
+            height = iter.height;
+            position = { ...iter.position };
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+
+      if (!found) {
+        const img = canvasImages.find((img) => img.id === itemId);
+        if (img) {
+          width = img.width;
+          height = img.height;
+          position = { ...img.position };
+          found = true;
+        }
+      }
+
+      if (!found || width === 0 || height === 0) return;
+
+      resizeRef.current = {
+        itemId,
+        handle,
+        startMouse: { x: clientX, y: clientY },
+        startDimensions: { width, height },
+        startPosition: { ...position },
+        aspectRatio: width / height,
+      };
+      setIsResizing(true);
+    },
+    [toolMode, spaceHeld, groups, canvasImages]
+  );
+
+  const handleResizeMove = useCallback(
+    (e: React.MouseEvent | MouseEvent) => {
+      if (!resizeRef.current) return;
+      const { itemId, handle, startMouse, startDimensions, startPosition, aspectRatio } = resizeRef.current;
+
+      const deltaX = (e.clientX - startMouse.x) / canvas.scale;
+      const deltaY = (e.clientY - startMouse.y) / canvas.scale;
+
+      const { width, height, dx, dy } = calculateNewDimensions(
+        handle, deltaX, deltaY,
+        startDimensions.width, startDimensions.height, aspectRatio
+      );
+
+      const newPosition = {
+        x: startPosition.x + dx,
+        y: startPosition.y + dy,
+      };
+
+      setGroups((prev) =>
+        prev.map((g) => ({
+          ...g,
+          iterations: g.iterations.map((iter) =>
+            iter.id === itemId
+              ? { ...iter, width, height, position: newPosition }
+              : iter
+          ),
+        }))
+      );
+
+      setCanvasImages((prev) =>
+        prev.map((img) =>
+          img.id === itemId
+            ? { ...img, width, height, position: newPosition }
+            : img
+        )
+      );
+    },
+    [canvas.scale, setGroups, setCanvasImages]
+  );
+
+  const handleResizeEnd = useCallback(() => {
+    resizeRef.current = null;
+    setIsResizing(false);
+  }, []);
+
   const canPan = spaceHeld && !draggingId;
   const isSelectMode = toolMode === "select" && !spaceHeld;
 
@@ -1236,6 +1364,8 @@ export default function Home() {
             handleImageDragMove(e);
           } else if (draggingId) {
             handleFrameDragMove(e);
+          } else if (isResizing) {
+            handleResizeMove(e);
           } else if (rubberBand) {
             setRubberBand((prev) => prev ? { ...prev, currentX: e.clientX, currentY: e.clientY } : null);
           } else {
@@ -1247,6 +1377,8 @@ export default function Home() {
             handleImageDragEnd();
           } else if (draggingId) {
             handleFrameDragEnd();
+          } else if (isResizing) {
+            handleResizeEnd();
           } else if (rubberBand) {
             // Calculate rubber band rect in canvas coordinates
             const rb = rubberBand;
@@ -1292,7 +1424,7 @@ export default function Home() {
           }
         }}
         onMouseLeave={() => {
-          if (draggingImageId) { handleImageDragEnd(); } else if (draggingId) { handleFrameDragEnd(); } else { setRubberBand(null); canvas.onMouseUp(); }
+          if (draggingImageId) { handleImageDragEnd(); } else if (draggingId) { handleFrameDragEnd(); } else if (isResizing) { handleResizeEnd(); } else { setRubberBand(null); canvas.onMouseUp(); }
         }}
         onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }}
         onDrop={(e) => {
