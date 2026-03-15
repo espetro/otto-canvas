@@ -4,13 +4,13 @@
   "description": "AI design tool with infinite canvas — vibe coding for design",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "portless run --name otto next dev",
     "build": "next build",
     "start": "next start"
   },
   "keywords": [],
   "author": "Stratus Labs LLC",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",

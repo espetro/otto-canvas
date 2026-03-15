@@ -86,7 +86,11 @@ Try these to get started:
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+This fork is licensed under the GNU Affero General Public License v3.0 (AGPL‑3.0‑only).
+The original project, dylanfeltus/otto-canvas, is licensed under the MIT License. Portions of this fork are derived from that project and remain available under the terms of the MIT License as originally granted by its authors.
+New contributions specific to this fork are licensed under AGPL‑3.0‑only.
+
+See [LICENSE](LICENSE) for details.
 
 ## Built With
 
