@@ -1515,6 +1515,9 @@ export default function Home() {
               apiKey={settings.apiKey || undefined}
               model={settings.model}
               pipelineStatus={pipelineStages[iteration.id]}
+              onResizeStart={(handle, clientX, clientY) => handleResizeStart(iteration.id, handle, clientX, clientY)}
+              isResizing={isResizing}
+              isSingleSelected={selectedIds.size === 1}
             />
           ))}
 

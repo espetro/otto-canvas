@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { DesignIteration, Comment as CommentType, Point } from "@/lib/types";
+import type { DesignIteration, Comment as CommentType, Point, ResizeHandle } from "@/lib/types";
 import type { PipelineStatus } from "@/lib/pipeline";
 import { STAGE_CONFIG } from "@/lib/pipeline";
 import { ExportMenu } from "./export-menu";
@@ -25,6 +25,9 @@ interface DesignCardProps {
   apiKey?: string;
   model?: string;
   pipelineStatus?: PipelineStatus;
+  onResizeStart?: (handle: ResizeHandle, clientX: number, clientY: number) => void;
+  isResizing?: boolean;
+  isSingleSelected?: boolean;
 }
 
 const REMIX_PRESETS = [
@@ -50,6 +53,9 @@ export function DesignCard({
   apiKey,
   model,
   pipelineStatus,
+  onResizeStart,
+  isResizing,
+  isSingleSelected,
 }: DesignCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -206,6 +212,28 @@ setTimeout(reportHeight, 1500);
             onClick={() => onClickComment(comment, iteration.id)}
           />
         ))}
+
+        {/* Resize handles — visible when single item selected in select mode */}
+        {isSelected && isSingleSelected && isSelectMode && !isDragging && !isResizing && onResizeStart && (
+          <>
+            <div
+              className="resize-handle resize-handle-nw"
+              onMouseDown={(e) => { e.stopPropagation(); onResizeStart("nw", e.clientX, e.clientY); }}
+            />
+            <div
+              className="resize-handle resize-handle-ne"
+              onMouseDown={(e) => { e.stopPropagation(); onResizeStart("ne", e.clientX, e.clientY); }}
+            />
+            <div
+              className="resize-handle resize-handle-sw"
+              onMouseDown={(e) => { e.stopPropagation(); onResizeStart("sw", e.clientX, e.clientY); }}
+            />
+            <div
+              className="resize-handle resize-handle-se"
+              onMouseDown={(e) => { e.stopPropagation(); onResizeStart("se", e.clientX, e.clientY); }}
+            />
+          </>
+        )}
       </div>
     </div>
   );
