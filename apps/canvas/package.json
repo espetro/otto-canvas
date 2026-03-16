@@ -25,6 +25,7 @@
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
+    "@otto/config": "workspace:*",
     "typescript": "5.9.3"
   }
 }
