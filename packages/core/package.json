@@ -18,6 +18,7 @@
     "@otto/types": "workspace:*"
   },
   "devDependencies": {
+    "@otto/config": "workspace:*",
     "vitest": "^3.0.0"
   }
 }
