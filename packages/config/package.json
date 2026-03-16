@@ -1,0 +1,11 @@
+{
+  "name": "@otto/config",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared TypeScript configuration for Otto monorepo",
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json"
+  }
+}
