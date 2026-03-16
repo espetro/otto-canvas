@@ -15,6 +15,16 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/config: {}
+
+  packages/core:
+    dependencies:
+      '@otto/types':
+        specifier: workspace:*
+        version: link:../types
+
+  packages/types: {}
+
 packages:
 
   turbo-darwin-64@2.8.17:

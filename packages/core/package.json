@@ -1,0 +1,16 @@
+{
+  "name": "@otto/core",
+  "version": "0.0.1",
+  "private": true,
+  "description": "AI-agnostic core business logic for Otto",
+  "type": "module",
+  "exports": {
+    "./constants": "./src/constants.ts",
+    "./parsers": "./src/parsers.ts",
+    "./processors": "./src/processors.ts",
+    "./prompts": "./src/prompts.ts"
+  },
+  "dependencies": {
+    "@otto/types": "workspace:*"
+  }
+}
