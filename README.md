@@ -1,3 +1,35 @@
+# Otto (Monorepo)
+
+This is the Otto monorepo managed with [Turborepo](https://turborepo.dev/).
+
+## Packages
+
+| Package | Description |
+|---------|-------------|
+| [`@otto/types`](packages/types) | Shared TypeScript types |
+| [`@otto/core`](packages/core) | AI-agnostic core logic (prompts, parsers, processors) |
+| [`@otto/config`](packages/config) | Shared TypeScript config |
+
+## Apps
+
+| App | Description |
+|-----|-------------|
+| [`apps/canvas`](apps/canvas) | Otto Canvas — AI design tool with infinite canvas |
+
+## Getting Started
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run dev server (canvas app)
+pnpm dev
+```
+
+Open [http://otto.localhost](http://otto.localhost) and enter your API key in Settings.
+
+---
+
 # Canvas by Otto
 
 **[→ Try it live at canvas.otto.design](https://canvas.otto.design)**
