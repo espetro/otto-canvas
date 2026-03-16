@@ -1,32 +1,19 @@
 {
-  "name": "otto-canvas",
-  "version": "1.0.0",
+  "name": "otto",
+  "private": true,
   "description": "AI design tool with infinite canvas — vibe coding for design",
-  "main": "index.js",
+  "packageManager": "pnpm@10.6.3",
   "scripts": {
-    "dev": "portless run --name otto next dev",
-    "build": "next build",
-    "start": "next start"
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "start": "turbo run start"
   },
   "keywords": [],
   "author": "Stratus Labs LLC",
   "license": "AGPL-3.0-only",
   "type": "module",
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.74.0",
-    "@google/genai": "^1.41.0",
-    "@tailwindcss/postcss": "^4.1.18",
-    "@types/node": "^25.2.3",
-    "@types/react": "^19.2.14",
-    "html-to-image": "^1.11.13",
-    "html2canvas-pro": "^1.6.7",
-    "next": "^16.1.6",
-    "postcss": "^8.5.6",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "tailwindcss": "^4.1.18"
-  },
   "devDependencies": {
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "turbo": "latest"
   }
 }
