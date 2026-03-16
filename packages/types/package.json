@@ -1,0 +1,11 @@
+{
+  "name": "@otto/types",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared TypeScript types for Otto monorepo",
+  "type": "module",
+  "exports": {
+    ".": "./src/types.ts",
+    "./pipeline": "./src/pipeline.ts"
+  }
+}
