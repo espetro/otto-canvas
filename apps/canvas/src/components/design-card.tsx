@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { DesignIteration, Comment as CommentType, Point } from "@/lib/types";
-import type { PipelineStatus } from "@/lib/pipeline";
-import { STAGE_CONFIG } from "@/lib/pipeline";
+import type { DesignIteration, Comment as CommentType, Point } from "@otto/types";
+import type { PipelineStatus } from "@otto/types/pipeline";
+import { STAGE_CONFIG } from "@otto/core/constants";
 import { ExportMenu } from "./export-menu";
 
 export const DEFAULT_FRAME_WIDTH = 480;

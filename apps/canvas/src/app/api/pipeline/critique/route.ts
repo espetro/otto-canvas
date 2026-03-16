@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { stripBase64Images } from "@otto/core/processors";
 
 export const maxDuration = 30;
 
@@ -11,20 +12,13 @@ function getClient(apiKey?: string, baseURL?: string): Anthropic {
   return new Anthropic();
 }
 
-
-function stripBase64Images(html: string): string {
-  return html.replace(/src="(data:image\/[^"]+)"/g, (_match, _dataUri) => {
-    return `src="[IMAGE]"`;
-  });
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { html, prompt, model, apiKey, anthropicApiUrl } = await req.json();
     const useModel = model || DEFAULT_MODEL;
     const client = getClient(apiKey, anthropicApiUrl);
 
-    const stripped = stripBase64Images(html);
+    const { stripped } = stripBase64Images(html);
 
     const message = await client.messages.create({
       model: useModel,

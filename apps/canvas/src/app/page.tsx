@@ -16,7 +16,7 @@ import { OnboardingModal } from "@/components/onboarding-modal";
 import { GuidedTour } from "@/components/guided-tour";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { usePersistedImages } from "@/hooks/use-persisted-images";
-import type { PipelineStatus } from "@/lib/pipeline";
+import type { PipelineStatus } from "@otto/types/pipeline";
 import type {
   DesignIteration,
   GenerationGroup,
@@ -25,7 +25,7 @@ import type {
   CommentMessage,
   Point,
   CanvasImage,
-} from "@/lib/types";
+} from "@otto/types";
 
 export default function Home() {
   const canvas = useCanvas();

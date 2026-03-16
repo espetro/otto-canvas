@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import type { ToolMode } from "@/lib/types";
+import type { ToolMode } from "@otto/types";
 import { type ModelInfo, FALLBACK_MODELS } from "@/hooks/use-settings";
 
 interface ToolbarProps {

@@ -1,6 +1,7 @@
 "use client";
 
-import { type PipelineStatus, STAGE_CONFIG } from "@/lib/pipeline";
+import { type PipelineStatus } from "@otto/types/pipeline";
+import { STAGE_CONFIG } from "@otto/core/constants";
 
 interface PipelineStatusBarProps {
   status: PipelineStatus;

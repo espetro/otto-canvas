@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { parseHtmlWithSize } from "@otto/core/parsers";
 
 export const maxDuration = 300;
 
@@ -270,25 +271,4 @@ OUTPUT FORMAT:
     width: parsed.width,
     height: parsed.height,
   };
-}
-
-function parseHtmlWithSize(raw: string): { html: string; width?: number; height?: number } {
-  let cleaned = raw.trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:html)?\n?/, "").replace(/\n?```$/, "");
-  }
-  cleaned = cleaned.trim();
-
-  // Extract size hint: <!--size:WIDTHxHEIGHT-->
-  const sizeMatch = cleaned.match(/<!--size:(\d+)x(\d+)-->/);
-  let width: number | undefined;
-  let height: number | undefined;
-
-  if (sizeMatch) {
-    width = parseInt(sizeMatch[1], 10);
-    height = parseInt(sizeMatch[2], 10);
-    cleaned = cleaned.replace(/<!--size:\d+x\d+-->\n?/, "").trim();
-  }
-
-  return { html: cleaned, width, height };
 }
