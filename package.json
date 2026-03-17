@@ -6,14 +6,24 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "start": "turbo run start"
+    "start": "turbo run start",
+    "proto:gen": "protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/gen --ts_proto_opt=outputServices=nice-grpc,outputClientImpl=connect-web ./proto/canvas.proto"
   },
   "keywords": [],
   "author": "Stratus Labs LLC",
   "license": "AGPL-3.0-only",
   "type": "module",
   "devDependencies": {
-    "typescript": "5.9.3",
-    "turbo": "latest"
+    "ts-proto": "^2.11.5",
+    "turbo": "latest",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@connectrpc/connect": "^2.1.1",
+    "@connectrpc/connect-node": "^2.1.1",
+    "@types/react": "^19.2.14",
+    "nice-grpc-common": "^2.0.0",
+    "react": "^19.2.4",
+    "zod": "^4.3.6"
   }
 }

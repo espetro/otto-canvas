@@ -16,6 +16,7 @@ import { OnboardingModal } from "@/components/onboarding-modal";
 import { GuidedTour } from "@/components/guided-tour";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { usePersistedImages } from "@/hooks/use-persisted-images";
+import { useRPCControl } from "@/hooks/use-rpc-control";
 import type { PipelineStatus } from "@otto/types/pipeline";
 import type {
   DesignIteration,
@@ -76,6 +77,26 @@ export default function Home() {
   const imgDragStartPositions = useRef<Map<string, Point>>(new Map());
 
   const commentCountRef = useRef(0);
+
+  // RPC Control hook for CLI integration
+  const { client: rpcClient, isConnected: rpcConnected } = useRPCControl({
+    onGenerate: (prompt) => {
+      console.log('RPC Generate:', prompt);
+      // TODO: Integrate with actual generate flow
+    },
+    onRefine: (designId, feedback) => {
+      console.log('RPC Refine:', designId, feedback);
+      // TODO: Integrate with actual refine flow
+    },
+    onList: () => {
+      console.log('RPC List');
+      // TODO: Return designs list
+    },
+    onSelect: (designId) => {
+      console.log('RPC Select:', designId);
+      // TODO: Select design in UI
+    },
+  });
 
   // Process dropped/uploaded image files into CanvasImage objects
   const processImageFiles = useCallback((files: File[], dropX?: number, dropY?: number) => {
@@ -1568,6 +1589,16 @@ export default function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             Add your API key in Settings to start designing
           </button>
+        </div>
+      )}
+
+      {/* RPC Connection Indicator */}
+      {rpcConnected && (
+        <div className="fixed top-4 right-4 z-40">
+          <div className="flex items-center gap-2 px-2 py-1 bg-green-500/10 text-green-400 rounded text-xs">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            CLI Connected
+          </div>
         </div>
       )}
     </div>

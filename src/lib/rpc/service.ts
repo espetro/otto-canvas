@@ -1,0 +1,1 @@
+export { canvasServiceImpl } from './handlers';

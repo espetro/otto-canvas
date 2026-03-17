@@ -1,0 +1,55 @@
+syntax = "proto3";
+package canvas;
+option go_package = "github.com/otto/canvas/gen";
+
+service CanvasService {
+  rpc Generate(GenerateRequest) returns (GenerateResponse);
+  rpc Refine(RefineRequest) returns (RefineResponse);
+  rpc List(ListRequest) returns (ListResponse);
+  rpc Select(SelectRequest) returns (SelectResponse);
+}
+
+message GenerateRequest {
+  string prompt = 1;
+  int32 iterations = 2;
+  string style = 3;
+}
+
+message GenerateResponse {
+  string design_id = 1;
+  string status = 2;
+  repeated Design designs = 3;
+}
+
+message RefineRequest {
+  string design_id = 1;
+  string feedback = 2;
+}
+
+message RefineResponse {
+  string design_id = 1;
+  string status = 2;
+}
+
+message ListRequest {
+  // Empty for now, can add filters later
+}
+
+message ListResponse {
+  repeated Design designs = 1;
+}
+
+message SelectRequest {
+  string design_id = 1;
+}
+
+message SelectResponse {
+  bool success = 1;
+}
+
+message Design {
+  string id = 1;
+  string prompt = 2;
+  string html_content = 3;
+  int64 created_at = 4;
+}

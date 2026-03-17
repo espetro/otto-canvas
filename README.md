@@ -116,6 +116,76 @@ Try these to get started:
 4. **Your AI model reviews** — Screenshots the result and auto-fixes issues
 5. **Each frame learns** — The next concept uses critique from the previous one to improve
 
+## CLI Integration
+
+Otto Canvas includes a CLI tool for remote control via Claude Code or other AI assistants.
+
+### Installation
+
+```bash
+cd otto-cli/otto-cli
+npm install -g .
+```
+
+### Configuration
+
+Create `~/.otto/config.json`:
+
+```json
+{
+  "anthropicKey": "your-api-key",
+  "defaultModel": "claude-sonnet-4",
+  "canvasUrl": "http://localhost:3000"
+}
+```
+
+### CLI Commands
+
+#### Generate a Design
+
+```bash
+otto generate "A pricing card with 3 tiers"
+```
+
+Options:
+- `-i, --iterations`: Number of iterations (default: 1)
+- `-s, --style`: Design style (default: default)
+
+#### List All Designs
+
+```bash
+otto list
+```
+
+#### Select a Design
+
+```bash
+otto select <design-id>
+```
+
+#### Refine a Design
+
+```bash
+otto refine <design-id> "Make the colors more vibrant"
+```
+
+### Claude Code Skill
+
+The skill is available at `.claude/skills/otto-canvas/SKILL.md`. To use it:
+
+1. Copy or symlink the skill to your Claude Code skills directory
+2. Use natural language like: "Generate a pricing card design"
+
+### Protocol
+
+The CLI uses ConnectRPC over HTTP with Protocol Buffers. See `proto/canvas.proto` for the service definition.
+
+### Troubleshooting
+
+- **Connection refused**: Make sure Otto Canvas is running on http://localhost:3000
+- **Command not found**: Install the CLI globally with `npm install -g .`
+- **No designs appearing**: Check that the canvas UI is loaded in your browser
+
 ## License
 
 This fork is licensed under the GNU Affero General Public License v3.0 (AGPL‑3.0‑only).
