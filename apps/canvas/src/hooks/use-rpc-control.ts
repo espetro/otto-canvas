@@ -1,30 +1,42 @@
-import { useEffect, useState } from 'react';
-import { createRPCClient } from '@shared/lib/rpc/server';
-import type { CanvasServiceClient } from '@shared/gen/proto/canvas';
+import { useEffect, useRef, useState } from 'react';
+import { rpcState } from '@shared/lib/rpc/state';
+import type { GenerateRequest, RefineRequest, ListRequest, SelectRequest } from '@otto/types';
 
 export interface UseRPCControlOptions {
-  onGenerate?: (prompt: string) => void;
-  onRefine?: (designId: string, feedback: string) => void;
-  onList?: () => void;
-  onSelect?: (designId: string) => void;
+  onGenerate?: (req: GenerateRequest) => Promise<void>;
+  onRefine?: (req: RefineRequest) => Promise<void>;
+    onList?: () => Promise<void>;
+    onSelect?: (req: SelectRequest) => Promise<void>;
 }
 
 export function useRPCControl(options: UseRPCControlOptions = {}) {
-  const [client, setClient] = useState<CanvasServiceClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+    const eventSourceRef = useRef<EventSource | null>(null);
+    const reconnectAttemptsRef = useRef(0);
+    const messageHandlerRef = useRef<(event: MessageEvent) => void>(null);
 
-  useEffect(() => {
-    const rpcClient = createRPCClient();
-    setClient(rpcClient);
-    setIsConnected(true);
+    const eventSource = new EventSource('/api/rpc/events');
 
-    // TODO: Set up WebSocket or HTTP/2 connection for receiving commands
-    // This is a stub - full implementation requires ConnectRPC transport setup
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        messageHandlerRef.current?.(data);
+      } catch (error) {
+        setError(`SSE error: ${error}`);
+        setIsConnected(false);
+      }
+    });
 
-    return () => {
+    eventSource.onerror = () => {
+      setError('SSE connection error');
       setIsConnected(false);
     };
-  }, []);
+
+    return () => {
+      eventSource.close();
+      rpcState.setBrowserConnected(false);
+    };
+  }, [options]);
 
   return {
     client,

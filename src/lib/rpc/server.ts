@@ -1,11 +1,4 @@
-import { createConnectTransport } from '@connectrpc/connect-node';
-
 export const createRPCClient = () => {
-  const transport = createConnectTransport({
-    baseUrl: 'http://localhost:3000',
-    httpVersion: '2',
-  });
-
   return null;
 };
 
