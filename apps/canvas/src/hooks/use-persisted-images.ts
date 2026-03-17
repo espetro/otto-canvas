@@ -3,14 +3,13 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { CanvasImage } from "@otto/types";
 
-const DB_NAME = "otto-canvas-images";
 const STORE_NAME = "ref-images";
 const DB_VERSION = 2; // bump from v1 used by groups hook
 const MAX_IMAGES = 20;
 
-function openDB(): Promise<IDBDatabase> {
+function openDB(dbName: string): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    const req = indexedDB.open(dbName, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains("images")) {
@@ -71,41 +70,45 @@ interface StoredImage {
   thumbnail: string;
 }
 
-export function usePersistedImages() {
+export function usePersistedImages(projectId: string) {
   const [images, setImagesRaw] = useState<CanvasImage[]>([]);
   const [loaded, setLoaded] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load from IndexedDB on mount
+  // Load from IndexedDB on mount or when projectId changes
   useEffect(() => {
     (async () => {
       try {
-        const db = await openDB();
+        const dbName = `otto-project-${projectId}-images`;
+        const db = await openDB(dbName);
         const stored = await dbGet<StoredImage[]>(db, "canvas-images");
         if (stored && stored.length > 0) {
-          setImagesRaw(stored.map((s) => ({
-            id: s.id,
-            dataUrl: s.compressedDataUrl,
-            name: s.name,
-            width: s.width,
-            height: s.height,
-            position: s.position,
-            thumbnail: s.thumbnail,
-          })));
+          setImagesRaw(
+            stored.map((s) => ({
+              id: s.id,
+              dataUrl: s.compressedDataUrl,
+              name: s.name,
+              width: s.width,
+              height: s.height,
+              position: s.position,
+              thumbnail: s.thumbnail,
+            })),
+          );
         }
       } catch (err) {
         console.warn("[persist-images] Failed to load:", err);
       }
       setLoaded(true);
     })();
-  }, []);
+  }, [projectId]);
 
   // Debounced save to IndexedDB
   const persistImages = useCallback(async (newImages: CanvasImage[]) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
       try {
-        const db = await openDB();
+        const dbName = `otto-project-${projectId}-images`;
+        const db = await openDB(dbName);
         // Compress images for storage (max 800px wide, JPEG 60%)
         const stored: StoredImage[] = await Promise.all(
           newImages.slice(0, MAX_IMAGES).map(async (img) => ({
@@ -116,14 +119,14 @@ export function usePersistedImages() {
             height: img.height,
             position: img.position,
             thumbnail: img.thumbnail,
-          }))
+          })),
         );
         await dbPut(db, "canvas-images", stored);
       } catch (err) {
         console.warn("[persist-images] Failed to save:", err);
       }
     }, 500);
-  }, []);
+  }, [projectId]);
 
   const setImages = useCallback(
     (updater: CanvasImage[] | ((prev: CanvasImage[]) => CanvasImage[])) => {
@@ -133,7 +136,7 @@ export function usePersistedImages() {
         return next;
       });
     },
-    [persistImages]
+    [persistImages],
   );
 
   return { images, setImages, loaded };

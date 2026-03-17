@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { GenerationGroup } from "@otto/types";
 
-const STORAGE_KEY = "otto-canvas-session";
 const IMG_DB_NAME = "otto-canvas-images";
 const IMG_STORE = "images";
 
@@ -25,8 +24,14 @@ async function saveImages(images: Record<string, string>): Promise<void> {
     store.put(val, key);
   }
   return new Promise((resolve, reject) => {
-    tx.oncomplete = () => { db.close(); resolve(); };
-    tx.onerror = () => { db.close(); reject(tx.error); };
+    tx.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error);
+    };
   });
 }
 
@@ -39,15 +44,26 @@ async function loadImages(): Promise<Record<string, string>> {
     const cursor = store.openCursor();
     cursor.onsuccess = () => {
       const c = cursor.result;
-      if (c) { result[c.key as string] = c.value; c.continue(); }
-      else { db.close(); resolve(result); }
+      if (c) {
+        result[c.key as string] = c.value;
+        c.continue();
+      } else {
+        db.close();
+        resolve(result);
+      }
     };
-    cursor.onerror = () => { db.close(); reject(cursor.error); };
+    cursor.onerror = () => {
+      db.close();
+      reject(cursor.error);
+    };
   });
 }
 
 /** Strip base64 data URIs, storing them in IndexedDB keyed by hash */
-function extractBase64(groups: GenerationGroup[]): { stripped: GenerationGroup[]; images: Record<string, string> } {
+function extractBase64(groups: GenerationGroup[]): {
+  stripped: GenerationGroup[];
+  images: Record<string, string>;
+} {
   const images: Record<string, string> = {};
   let counter = 0;
   const stripped = groups.map((g) => ({
@@ -67,7 +83,10 @@ function extractBase64(groups: GenerationGroup[]): { stripped: GenerationGroup[]
 }
 
 /** Restore base64 from IndexedDB refs */
-function restoreBase64(groups: GenerationGroup[], images: Record<string, string>): GenerationGroup[] {
+function restoreBase64(
+  groups: GenerationGroup[],
+  images: Record<string, string>,
+): GenerationGroup[] {
   return groups.map((g) => ({
     ...g,
     iterations: g.iterations.map((it) => ({
@@ -81,21 +100,20 @@ function restoreBase64(groups: GenerationGroup[], images: Record<string, string>
   }));
 }
 
-export function usePersistedGroups() {
+export function usePersistedGroups(projectId: string) {
   const [groups, setGroupsRaw] = useState<GenerationGroup[]>([]);
   const [loaded, setLoaded] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const storageKey = `otto-project-${projectId}-session`;
 
-  // Load from localStorage + IndexedDB on mount
+  // Load from localStorage + IndexedDB on mount or when projectId changes
   useEffect(() => {
     (async () => {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(storageKey);
         if (raw) {
           const parsed = JSON.parse(raw) as GenerationGroup[];
-          const valid = parsed.filter((g) =>
-            g.iterations.some((it) => it.html && !it.isLoading)
-          );
+          const valid = parsed.filter((g) => g.iterations.some((it) => it.html && !it.isLoading));
           if (valid.length > 0) {
             // Restore base64 images from IndexedDB
             try {
@@ -109,7 +127,7 @@ export function usePersistedGroups() {
       } catch {}
       setLoaded(true);
     })();
-  }, []);
+  }, [projectId, storageKey]);
 
   // Debounced save to localStorage
   const persistGroups = useCallback((newGroups: GenerationGroup[]) => {
@@ -117,22 +135,20 @@ export function usePersistedGroups() {
     saveTimer.current = setTimeout(() => {
       try {
         // Only save groups that have real content
-        const toSave = newGroups.filter((g) =>
-          g.iterations.some((it) => it.html && !it.isLoading)
-        );
+        const toSave = newGroups.filter((g) => g.iterations.some((it) => it.html && !it.isLoading));
         // Extract base64 images to IndexedDB, store lightweight HTML in localStorage
         const { stripped, images } = extractBase64(toSave);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(stripped));
+        localStorage.setItem(storageKey, JSON.stringify(stripped));
         if (Object.keys(images).length > 0) {
           saveImages(images).catch((err) =>
-            console.warn("[persist] Failed to save images to IndexedDB:", err)
+            console.warn("[persist] Failed to save images to IndexedDB:", err),
           );
         }
       } catch (err) {
         console.warn("[persist] Failed to save canvas session:", err);
       }
     }, 500);
-  }, []);
+  }, [storageKey]);
 
   // Wrapper that persists on every change
   const setGroups = useCallback(
@@ -143,15 +159,15 @@ export function usePersistedGroups() {
         return next;
       });
     },
-    [persistGroups]
+    [persistGroups],
   );
 
   const resetSession = useCallback(() => {
     setGroupsRaw([]);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(storageKey);
     } catch {}
-  }, []);
+  }, [storageKey]);
 
   return { groups, setGroups, loaded, resetSession };
 }

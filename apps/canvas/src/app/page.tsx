@@ -5,8 +5,11 @@ import { useCanvas } from "@/hooks/use-canvas";
 import { useSettings } from "@/hooks/use-settings";
 import { DesignCard, DEFAULT_FRAME_WIDTH as FRAME_WIDTH } from "@/components/design-card";
 import { usePersistedGroups } from "@/hooks/use-persisted-groups";
+import { useProjectManager } from "@/hooks/use-project-manager";
 import { PromptBar } from "@/components/prompt-bar";
 import { Toolbar } from "@/components/toolbar";
+import { SessionSidebar } from "@/components/session-sidebar";
+import { BurgerButton } from "@/components/burger-button";
 import { CommentInput } from "@/components/comment-input";
 import { CommentThread } from "@/components/comment-thread";
 import { SettingsModal } from "@/components/settings-modal";
@@ -16,7 +19,6 @@ import { OnboardingModal } from "@/components/onboarding-modal";
 import { GuidedTour } from "@/components/guided-tour";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { usePersistedImages } from "@/hooks/use-persisted-images";
-import { useRPCControl } from "@/hooks/use-rpc-control";
 import type { PipelineStatus } from "@otto/types/pipeline";
 import type {
   DesignIteration,
@@ -30,19 +32,59 @@ import type {
 
 export default function Home() {
   const canvas = useCanvas();
-  const { settings, setSettings, isOwnKey, hasGeminiKey, availableModels, isProbing, cachedModels, modelsFetchError } = useSettings();
+  const {
+    settings,
+    setSettings,
+    isOwnKey,
+    hasGeminiKey,
+    availableModels,
+    isProbing,
+    cachedModels,
+    modelsFetchError,
+  } = useSettings();
   const onboarding = useOnboarding();
   const canvasElRef = useRef<HTMLDivElement | null>(null);
-  const combinedCanvasRef: RefCallback<HTMLDivElement> = useCallback((el) => {
-    canvasElRef.current = el;
-    canvas.setCanvasRef(el);
-  }, [canvas.setCanvasRef]);
-  const { groups, setGroups, resetSession } = usePersistedGroups();
+  const combinedCanvasRef: RefCallback<HTMLDivElement> = useCallback(
+    (el) => {
+      canvasElRef.current = el;
+      canvas.setCanvasRef(el);
+    },
+    [canvas.setCanvasRef],
+  );
+  const {
+    currentProjectId,
+    createProject,
+    switchProject,
+    renameProject,
+    updateCurrentProjectTimestamp,
+    projects,
+    currentProject,
+    loaded: projectManagerLoaded,
+  } = useProjectManager();
+  const { groups, setGroups, resetSession } = usePersistedGroups(currentProjectId);
   const groupsRef = useRef(groups);
-  useEffect(() => { groupsRef.current = groups; }, [groups]);
+  useEffect(() => {
+    groupsRef.current = groups;
+  }, [groups]);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [toolMode, setToolMode] = useState<ToolMode>("select");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("otto-sidebar-visible");
+      if (stored !== null) {
+        setShowSidebar(stored === "true");
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("otto-sidebar-visible", String(showSidebar));
+    } catch {}
+  }, [showSidebar]);
   const [pipelineStages, setPipelineStages] = useState<Record<string, PipelineStatus>>({});
   const [genStatus, setGenStatus] = useState("");
   const abortRef = useRef<AbortController | null>(null);
@@ -69,117 +111,118 @@ export default function Home() {
   const [activeCommentIterationId, setActiveCommentIterationId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // Rubber band selection state
-  const [rubberBand, setRubberBand] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
+  const [rubberBand, setRubberBand] = useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
   // Dropped reference images (persisted in IndexedDB)
-  const { images: canvasImages, setImages: setCanvasImages } = usePersistedImages();
+  const { images: canvasImages, setImages: setCanvasImages } = usePersistedImages(currentProjectId);
   const [draggingImageId, setDraggingImageId] = useState<string | null>(null);
   const imgDragRef = useRef<{ id: string; startMouse: Point; startPos: Point } | null>(null);
   const imgDragStartPositions = useRef<Map<string, Point>>(new Map());
 
   const commentCountRef = useRef(0);
 
-  // RPC Control hook for CLI integration
-  const { client: rpcClient, isConnected: rpcConnected } = useRPCControl({
-    onGenerate: (prompt) => {
-      console.log('RPC Generate:', prompt);
-      // TODO: Integrate with actual generate flow
-    },
-    onRefine: (designId, feedback) => {
-      console.log('RPC Refine:', designId, feedback);
-      // TODO: Integrate with actual refine flow
-    },
-    onList: () => {
-      console.log('RPC List');
-      // TODO: Return designs list
-    },
-    onSelect: (designId) => {
-      console.log('RPC Select:', designId);
-      // TODO: Select design in UI
-    },
-  });
-
   // Process dropped/uploaded image files into CanvasImage objects
-  const processImageFiles = useCallback((files: File[], dropX?: number, dropY?: number) => {
-    files.forEach((file, idx) => {
-      if (!file.type.startsWith("image/")) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        const img = new Image();
-        img.onload = () => {
-          // Compress for API: max 1024px on longest edge, JPEG 70%
-          const maxDim = 1024;
-          const apiScale = Math.min(maxDim / Math.max(img.width, img.height), 1);
-          const apiCanvas = document.createElement("canvas");
-          apiCanvas.width = img.width * apiScale;
-          apiCanvas.height = img.height * apiScale;
-          const apiCtx = apiCanvas.getContext("2d")!;
-          apiCtx.drawImage(img, 0, 0, apiCanvas.width, apiCanvas.height);
-          const compressedDataUrl = apiCanvas.toDataURL("image/jpeg", 0.7);
+  const processImageFiles = useCallback(
+    (files: File[], dropX?: number, dropY?: number) => {
+      files.forEach((file, idx) => {
+        if (!file.type.startsWith("image/")) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          const img = new Image();
+          img.onload = () => {
+            // Compress for API: max 1024px on longest edge, JPEG 70%
+            const maxDim = 1024;
+            const apiScale = Math.min(maxDim / Math.max(img.width, img.height), 1);
+            const apiCanvas = document.createElement("canvas");
+            apiCanvas.width = img.width * apiScale;
+            apiCanvas.height = img.height * apiScale;
+            const apiCtx = apiCanvas.getContext("2d")!;
+            apiCtx.drawImage(img, 0, 0, apiCanvas.width, apiCanvas.height);
+            const compressedDataUrl = apiCanvas.toDataURL("image/jpeg", 0.7);
 
-          // Create thumbnail (max 128px)
-          const thumbScale = Math.min(128 / img.width, 128 / img.height, 1);
-          const thumbCanvas = document.createElement("canvas");
-          thumbCanvas.width = img.width * thumbScale;
-          thumbCanvas.height = img.height * thumbScale;
-          const thumbCtx = thumbCanvas.getContext("2d")!;
-          thumbCtx.drawImage(img, 0, 0, thumbCanvas.width, thumbCanvas.height);
-          const thumbnail = thumbCanvas.toDataURL("image/jpeg", 0.7);
+            // Create thumbnail (max 128px)
+            const thumbScale = Math.min(128 / img.width, 128 / img.height, 1);
+            const thumbCanvas = document.createElement("canvas");
+            thumbCanvas.width = img.width * thumbScale;
+            thumbCanvas.height = img.height * thumbScale;
+            const thumbCtx = thumbCanvas.getContext("2d")!;
+            thumbCtx.drawImage(img, 0, 0, thumbCanvas.width, thumbCanvas.height);
+            const thumbnail = thumbCanvas.toDataURL("image/jpeg", 0.7);
 
-          // Position on canvas
-          const cx = dropX !== undefined ? (dropX - canvas.offset.x) / canvas.scale : 100 + idx * 220;
-          const cy = dropY !== undefined ? (dropY - canvas.offset.y) / canvas.scale : 100;
+            // Position on canvas
+            const cx =
+              dropX !== undefined ? (dropX - canvas.offset.x) / canvas.scale : 100 + idx * 220;
+            const cy = dropY !== undefined ? (dropY - canvas.offset.y) / canvas.scale : 100;
 
-          // Scale display size to max 200px wide
-          const displayScale = Math.min(200 / img.width, 1);
+            // Scale display size to max 200px wide
+            const displayScale = Math.min(200 / img.width, 1);
 
-          setCanvasImages((prev) => [
-            ...prev,
-            {
-              id: `img-${Date.now()}-${idx}`,
-              dataUrl: compressedDataUrl,
-              name: file.name,
-              width: img.width * displayScale,
-              height: img.height * displayScale,
-              position: { x: cx, y: cy },
-              thumbnail,
-            },
-          ]);
+            setCanvasImages((prev) => [
+              ...prev,
+              {
+                id: `img-${Date.now()}-${idx}`,
+                dataUrl: compressedDataUrl,
+                name: file.name,
+                width: img.width * displayScale,
+                height: img.height * displayScale,
+                position: { x: cx, y: cy },
+                thumbnail,
+              },
+            ]);
+          };
+          img.src = dataUrl;
         };
-        img.src = dataUrl;
-      };
-      reader.readAsDataURL(file);
-    });
-  }, [canvas.offset.x, canvas.offset.y, canvas.scale]);
+        reader.readAsDataURL(file);
+      });
+    },
+    [canvas.offset.x, canvas.offset.y, canvas.scale],
+  );
 
   // Image drag handlers
-  const handleImageDragStart = useCallback((id: string, e: React.MouseEvent) => {
-    if (toolMode !== "select" || spaceHeld) return;
-    e.stopPropagation();
-    const img = canvasImages.find((i) => i.id === id);
-    if (!img) return;
-    imgDragRef.current = { id, startMouse: { x: e.clientX, y: e.clientY }, startPos: { ...img.position } };
-    // Also capture start positions of all selected images for multi-drag
-    imgDragStartPositions.current.clear();
-    const movingIds = selectedIds.has(id) ? selectedIds : new Set([id]);
-    for (const ci of canvasImages) {
-      if (movingIds.has(ci.id)) imgDragStartPositions.current.set(ci.id, { ...ci.position });
-    }
-    setDraggingImageId(id);
-  }, [toolMode, spaceHeld, canvasImages, selectedIds]);
+  const handleImageDragStart = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      if (toolMode !== "select" || spaceHeld) return;
+      e.stopPropagation();
+      const img = canvasImages.find((i) => i.id === id);
+      if (!img) return;
+      imgDragRef.current = {
+        id,
+        startMouse: { x: e.clientX, y: e.clientY },
+        startPos: { ...img.position },
+      };
+      // Also capture start positions of all selected images for multi-drag
+      imgDragStartPositions.current.clear();
+      const movingIds = selectedIds.has(id) ? selectedIds : new Set([id]);
+      for (const ci of canvasImages) {
+        if (movingIds.has(ci.id)) imgDragStartPositions.current.set(ci.id, { ...ci.position });
+      }
+      setDraggingImageId(id);
+    },
+    [toolMode, spaceHeld, canvasImages, selectedIds],
+  );
 
-  const handleImageDragMove = useCallback((e: React.MouseEvent) => {
-    if (!imgDragRef.current) return;
-    const dx = (e.clientX - imgDragRef.current.startMouse.x) / canvas.scale;
-    const dy = (e.clientY - imgDragRef.current.startMouse.y) / canvas.scale;
-    const dragId = imgDragRef.current.id;
-    const movingIds = selectedIds.has(dragId) ? selectedIds : new Set([dragId]);
-    setCanvasImages((prev) => prev.map((img) => {
-      if (!movingIds.has(img.id)) return img;
-      const startPos = imgDragStartPositions.current.get(img.id) || img.position;
-      return { ...img, position: { x: startPos.x + dx, y: startPos.y + dy } };
-    }));
-  }, [canvas.scale, selectedIds]);
+  const handleImageDragMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!imgDragRef.current) return;
+      const dx = (e.clientX - imgDragRef.current.startMouse.x) / canvas.scale;
+      const dy = (e.clientY - imgDragRef.current.startMouse.y) / canvas.scale;
+      const dragId = imgDragRef.current.id;
+      const movingIds = selectedIds.has(dragId) ? selectedIds : new Set([dragId]);
+      setCanvasImages((prev) =>
+        prev.map((img) => {
+          if (!movingIds.has(img.id)) return img;
+          const startPos = imgDragStartPositions.current.get(img.id) || img.position;
+          return { ...img, position: { x: startPos.x + dx, y: startPos.y + dy } };
+        }),
+      );
+    },
+    [canvas.scale, selectedIds],
+  );
 
   const handleImageDragEnd = useCallback(() => {
     imgDragRef.current = null;
@@ -208,10 +251,12 @@ export default function Home() {
       }
       if ((e.key === "Delete" || e.key === "Backspace") && selectedIds.size > 0) {
         setGroups((prev) =>
-          prev.map((g) => ({
-            ...g,
-            iterations: g.iterations.filter((iter) => !selectedIds.has(iter.id)),
-          })).filter((g) => g.iterations.length > 0)
+          prev
+            .map((g) => ({
+              ...g,
+              iterations: g.iterations.filter((iter) => !selectedIds.has(iter.id)),
+            }))
+            .filter((g) => g.iterations.length > 0),
         );
         setCanvasImages((prev) => prev.filter((img) => !selectedIds.has(img.id)));
         setSelectedIds(new Set());
@@ -264,7 +309,7 @@ export default function Home() {
         y: startY,
       }));
     },
-    [canvas.offset, canvas.scale, groups]
+    [canvas.offset, canvas.scale, groups],
   );
 
   const handleExportOtto = useCallback(() => {
@@ -307,24 +352,28 @@ export default function Home() {
             alert("Invalid .otto file");
             return;
           }
-          setGroups(data.groups.map((g: Record<string, unknown>) => ({
-            id: g.id || `group-${Date.now()}-${Math.random()}`,
-            prompt: g.prompt || "",
-            position: g.position || { x: 0, y: 0 },
-            createdAt: g.createdAt || Date.now(),
-            iterations: ((g.iterations as Record<string, unknown>[]) || []).map((iter: Record<string, unknown>) => ({
-              id: iter.id || `iter-${Date.now()}-${Math.random()}`,
-              html: iter.html || "",
-              label: iter.label || "Imported",
-              position: iter.position || { x: 0, y: 0 },
-              width: iter.width || 600,
-              height: iter.height || 400,
-              prompt: iter.prompt || g.prompt || "",
-              comments: iter.comments || [],
-              isLoading: false,
-              isRegenerating: false,
+          setGroups(
+            data.groups.map((g: Record<string, unknown>) => ({
+              id: g.id || `group-${Date.now()}-${Math.random()}`,
+              prompt: g.prompt || "",
+              position: g.position || { x: 0, y: 0 },
+              createdAt: g.createdAt || Date.now(),
+              iterations: ((g.iterations as Record<string, unknown>[]) || []).map(
+                (iter: Record<string, unknown>) => ({
+                  id: iter.id || `iter-${Date.now()}-${Math.random()}`,
+                  html: iter.html || "",
+                  label: iter.label || "Imported",
+                  position: iter.position || { x: 0, y: 0 },
+                  width: iter.width || 600,
+                  height: iter.height || 400,
+                  prompt: iter.prompt || g.prompt || "",
+                  comments: iter.comments || [],
+                  isLoading: false,
+                  isRegenerating: false,
+                }),
+              ),
             })),
-          })));
+          );
         } catch {
           alert("Failed to parse .otto file");
         }
@@ -364,7 +413,7 @@ export default function Home() {
       if (!res.ok || data.error) throw new Error(data.error || `Request to ${url} failed`);
       return data;
     },
-    []
+    [],
   );
 
   /** Post-process: cap oversized sections */
@@ -375,18 +424,18 @@ export default function Home() {
       (_match: string, prefix: string, heightStr: string) => {
         const h = parseInt(heightStr, 10);
         return h > 800 ? `${prefix}height:${h}px;max-height:800px;overflow:hidden` : _match;
-      }
+      },
     );
     result = result.replace(
       /(<(?:section|div)\s[^>]*style="[^"]*?)min-height\s*:\s*(\d+)px/gi,
       (_match: string, prefix: string, heightStr: string) => {
         const h = parseInt(heightStr, 10);
         return h > 800 ? `${prefix}min-height:${h}px;max-height:800px;overflow:hidden` : _match;
-      }
+      },
     );
     result = result.replace(
       /(<(?:section|div)\s[^>]*style="[^"]*?)(?:min-)?height\s*:\s*100vh/gi,
-      (_match: string, prefix: string) => `${prefix}height:auto;max-height:800px;overflow:hidden`
+      (_match: string, prefix: string) => `${prefix}height:auto;max-height:800px;overflow:hidden`,
     );
     return result;
   }, []);
@@ -402,7 +451,14 @@ export default function Home() {
       signal: AbortSignal,
       revisionOpts?: { revision: string; existingHtml: string },
       contextImages?: string[],
-    ): Promise<{ html: string; label: string; width?: number; height?: number; critique?: string; comment?: string }> => {
+    ): Promise<{
+      html: string;
+      label: string;
+      width?: number;
+      height?: number;
+      critique?: string;
+      comment?: string;
+    }> => {
       const isRevision = !!revisionOpts;
       const enableImages = !!(settings.geminiKey || settings.unsplashKey || settings.openaiKey);
       const enableQA = !isRevision;
@@ -415,15 +471,22 @@ export default function Home() {
       // --- Step 1: Layout ---
       setPipelineStages((prev) => ({ ...prev, [iterId]: { stage: "layout", progress: 0.2 } }));
 
-      const layoutResult = await pipelinePost("/api/pipeline/layout", {
-        prompt, style, model: settings.model,
-        apiKey: settings.apiKey || undefined,
-        anthropicApiUrl: settings.anthropicApiUrl || undefined,
-        systemPrompt: settings.systemPrompt || undefined,
-        critique, availableSources,
-        ...(revisionOpts || {}),
-        ...(contextImages && contextImages.length > 0 ? { contextImages } : {}),
-      }, signal);
+      const layoutResult = await pipelinePost(
+        "/api/pipeline/layout",
+        {
+          prompt,
+          style,
+          model: settings.model,
+          apiKey: settings.apiKey || undefined,
+          anthropicApiUrl: settings.anthropicApiUrl || undefined,
+          systemPrompt: settings.systemPrompt || undefined,
+          critique,
+          availableSources,
+          ...(revisionOpts || {}),
+          ...(contextImages && contextImages.length > 0 ? { contextImages } : {}),
+        },
+        signal,
+      );
 
       let html: string = layoutResult.html;
       const width: number | undefined = layoutResult.width;
@@ -435,9 +498,17 @@ export default function Home() {
         prev.map((g) => ({
           ...g,
           iterations: g.iterations.map((iter) =>
-            iter.id !== iterId ? iter : { ...iter, html, width: width || iter.width, height: height || iter.height, isLoading: false }
+            iter.id !== iterId
+              ? iter
+              : {
+                  ...iter,
+                  html,
+                  width: width || iter.width,
+                  height: height || iter.height,
+                  isLoading: false,
+                },
           ),
-        }))
+        })),
       );
 
       // --- Step 2: Images ---
@@ -445,24 +516,31 @@ export default function Home() {
         setPipelineStages((prev) => ({ ...prev, [iterId]: { stage: "images", progress: 0.45 } }));
 
         try {
-          const imgResult = await pipelinePost("/api/pipeline/images", {
-            html,
-            geminiKey: settings.geminiKey || undefined,
-            unsplashKey: settings.unsplashKey || undefined,
-            openaiKey: settings.openaiKey || undefined,
-          }, signal);
+          const imgResult = await pipelinePost(
+            "/api/pipeline/images",
+            {
+              html,
+              geminiKey: settings.geminiKey || undefined,
+              unsplashKey: settings.unsplashKey || undefined,
+              openaiKey: settings.openaiKey || undefined,
+            },
+            signal,
+          );
 
           if (imgResult.html && imgResult.imageCount > 0) {
             html = imgResult.html;
             // Show composited preview
-            setPipelineStages((prev) => ({ ...prev, [iterId]: { stage: "compositing", progress: 0.65 } }));
+            setPipelineStages((prev) => ({
+              ...prev,
+              [iterId]: { stage: "compositing", progress: 0.65 },
+            }));
             setGroups((prev) =>
               prev.map((g) => ({
                 ...g,
                 iterations: g.iterations.map((iter) =>
-                  iter.id !== iterId ? iter : { ...iter, html }
+                  iter.id !== iterId ? iter : { ...iter, html },
                 ),
-              }))
+              })),
             );
           }
         } catch (imgErr) {
@@ -471,7 +549,12 @@ export default function Home() {
       } else {
         setPipelineStages((prev) => ({
           ...prev,
-          [iterId]: { stage: "images", progress: 0.45, skipped: true, reason: "No image API keys — add Unsplash, DALL·E, or Gemini key in Settings" },
+          [iterId]: {
+            stage: "images",
+            progress: 0.45,
+            skipped: true,
+            reason: "No image API keys — add Unsplash, DALL·E, or Gemini key in Settings",
+          },
         }));
       }
 
@@ -481,17 +564,27 @@ export default function Home() {
         try {
           // Strip base64 images client-side to avoid 413 FUNCTION_PAYLOAD_TOO_LARGE
           const reviewImages: string[] = [];
-          const htmlForReview = html.replace(/src="(data:image\/[^"]+)"/g, (_m: string, uri: string) => {
-            const idx = reviewImages.length;
-            reviewImages.push(uri);
-            return `src="[IMG_STRIPPED_${idx}]"`;
-          });
-          const qaResult = await pipelinePost("/api/pipeline/review", {
-            html: htmlForReview, prompt, width, height,
-            model: settings.model,
-            apiKey: settings.apiKey || undefined,
-            anthropicApiUrl: settings.anthropicApiUrl || undefined,
-          }, signal);
+          const htmlForReview = html.replace(
+            /src="(data:image\/[^"]+)"/g,
+            (_m: string, uri: string) => {
+              const idx = reviewImages.length;
+              reviewImages.push(uri);
+              return `src="[IMG_STRIPPED_${idx}]"`;
+            },
+          );
+          const qaResult = await pipelinePost(
+            "/api/pipeline/review",
+            {
+              html: htmlForReview,
+              prompt,
+              width,
+              height,
+              model: settings.model,
+              apiKey: settings.apiKey || undefined,
+              anthropicApiUrl: settings.anthropicApiUrl || undefined,
+            },
+            signal,
+          );
           if (qaResult.html) {
             // Restore base64 images into reviewed HTML
             let reviewed = qaResult.html;
@@ -504,9 +597,9 @@ export default function Home() {
               prev.map((g) => ({
                 ...g,
                 iterations: g.iterations.map((iter) =>
-                  iter.id !== iterId ? iter : { ...iter, html }
+                  iter.id !== iterId ? iter : { ...iter, html },
                 ),
-              }))
+              })),
             );
           }
         } catch (qaErr) {
@@ -525,13 +618,21 @@ export default function Home() {
 
       try {
         // Strip base64 images client-side to avoid 413 FUNCTION_PAYLOAD_TOO_LARGE
-        const htmlForCritique = html.replace(/src="(data:image\/[^"]+)"/g, () => 'src="[IMG_STRIPPED]"');
-        const critiqueResult = await pipelinePost("/api/pipeline/critique", {
-          html: htmlForCritique, prompt,
-          model: settings.model,
-          apiKey: settings.apiKey || undefined,
-          anthropicApiUrl: settings.anthropicApiUrl || undefined,
-        }, signal);
+        const htmlForCritique = html.replace(
+          /src="(data:image\/[^"]+)"/g,
+          () => 'src="[IMG_STRIPPED]"',
+        );
+        const critiqueResult = await pipelinePost(
+          "/api/pipeline/critique",
+          {
+            html: htmlForCritique,
+            prompt,
+            model: settings.model,
+            apiKey: settings.apiKey || undefined,
+            anthropicApiUrl: settings.anthropicApiUrl || undefined,
+          },
+          signal,
+        );
         critiqueText = critiqueResult.critique || undefined;
       } catch {
         // Critique is optional
@@ -539,15 +640,28 @@ export default function Home() {
 
       return { html, label, width, height, critique: critiqueText, comment: aiComment };
     },
-    [settings.apiKey, settings.model, settings.systemPrompt, settings.geminiKey, settings.unsplashKey, settings.openaiKey, settings.anthropicApiUrl, pipelinePost, capOversizedSections]
+    [
+      settings.apiKey,
+      settings.model,
+      settings.systemPrompt,
+      settings.geminiKey,
+      settings.unsplashKey,
+      settings.openaiKey,
+      settings.anthropicApiUrl,
+      pipelinePost,
+      capOversizedSections,
+    ],
   );
 
   const handleGenerate = useCallback(
     async (prompt: string) => {
+      if (groups.length === 0) {
+        createProject(prompt);
+      }
+
       // Auto-include all canvas images as context
-      const contextImages = canvasImages.length > 0
-        ? canvasImages.map((img) => img.dataUrl)
-        : undefined;
+      const contextImages =
+        canvasImages.length > 0 ? canvasImages.map((img) => img.dataUrl) : undefined;
       setIsGenerating(true);
       setGenStatus("Planning concepts…");
       const groupId = `group-${Date.now()}`;
@@ -564,12 +678,12 @@ export default function Home() {
           const planRes = await fetch("/api/plan", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              prompt, 
-              count: iterationCount, 
-              apiKey: settings.apiKey || undefined, 
+            body: JSON.stringify({
+              prompt,
+              count: iterationCount,
+              apiKey: settings.apiKey || undefined,
               anthropicApiUrl: settings.anthropicApiUrl || undefined,
-              model: settings.model 
+              model: settings.model,
             }),
             signal: controller.signal,
           });
@@ -628,11 +742,15 @@ export default function Home() {
                   },
                 ],
               };
-            })
+            }),
           );
         };
 
-        const completeFrame = (iterId: string, result: { html: string; label: string; width?: number; height?: number }, pos: Point) => {
+        const completeFrame = (
+          iterId: string,
+          result: { html: string; label: string; width?: number; height?: number },
+          pos: Point,
+        ) => {
           const w = result.width || FRAME_WIDTH;
           const h = result.height || 400;
           completedFrames.push({ x: pos.x, y: pos.y, w, h });
@@ -655,12 +773,15 @@ export default function Home() {
                   };
                 }),
               };
-            })
+            }),
           );
 
           // Zoom to fit all completed frames
           setTimeout(() => {
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            let minX = Infinity,
+              minY = Infinity,
+              maxX = -Infinity,
+              maxY = -Infinity;
             for (const f of completedFrames) {
               minX = Math.min(minX, f.x);
               minY = Math.min(minY, f.y);
@@ -695,21 +816,27 @@ export default function Home() {
               ).then((result) => {
                 completeFrame(iterId, result, positions[i]);
                 return result;
-              })
-            )
+              }),
+            ),
           );
 
           results.forEach((r, i) => {
             if (r.status === "rejected") {
               const msg = r.reason instanceof Error ? r.reason.message : "Failed";
-              setPipelineStages((prev) => ({ ...prev, [iterIds[i]]: { stage: "error", progress: 0 } }));
-              completeFrame(iterIds[i], {
-                html: `<div style="padding:32px;color:#666;font-family:system-ui"><p style="font-size:14px">⚠ ${msg}</p></div>`,
-                label: `Variation ${i + 1}`,
-              }, positions[i]);
+              setPipelineStages((prev) => ({
+                ...prev,
+                [iterIds[i]]: { stage: "error", progress: 0 },
+              }));
+              completeFrame(
+                iterIds[i],
+                {
+                  html: `<div style="padding:32px;color:#666;font-family:system-ui"><p style="font-size:14px">⚠ ${msg}</p></div>`,
+                  label: `Variation ${i + 1}`,
+                },
+                positions[i],
+              );
             }
           });
-
         } else {
           // Sequential critique loop: one frame at a time
           let critique: string | undefined;
@@ -722,7 +849,7 @@ export default function Home() {
             setGenStatus(
               critique
                 ? `Designing ${i + 1} of ${iterationCount}…`
-                : `Designing ${i + 1} of ${iterationCount}…`
+                : `Designing ${i + 1} of ${iterationCount}…`,
             );
 
             // Create this frame's placeholder NOW (not upfront)
@@ -751,7 +878,7 @@ export default function Home() {
                       return { ...iter, position: pos };
                     }),
                   };
-                })
+                }),
               );
 
               completeFrame(iterId, result, pos);
@@ -760,30 +887,37 @@ export default function Home() {
               if (err instanceof Error && err.name === "AbortError") throw err;
               const msg = err instanceof Error ? err.message : "Failed";
               setPipelineStages((prev) => ({ ...prev, [iterId]: { stage: "error", progress: 0 } }));
-              completeFrame(iterId, {
-                html: `<div style="padding:32px;color:#666;font-family:system-ui"><p style="font-size:14px">⚠ ${msg}</p></div>`,
-                label: `Variation ${i + 1}`,
-              }, pos);
+              completeFrame(
+                iterId,
+                {
+                  html: `<div style="padding:32px;color:#666;font-family:system-ui"><p style="font-size:14px">⚠ ${msg}</p></div>`,
+                  label: `Variation ${i + 1}`,
+                },
+                pos,
+              );
             }
           }
         }
-
       } catch (err: unknown) {
         if (err instanceof Error && err.name === "AbortError") {
           setGroups((prev) =>
-            prev.map((g) => {
-              if (g.id !== groupId) return g;
-              const kept = g.iterations.filter((iter) => !iter.isLoading);
-              const removedIds = g.iterations.filter((iter) => iter.isLoading).map((iter) => iter.id);
-              if (removedIds.length) {
-                setPipelineStages((prev) => {
-                  const next = { ...prev };
-                  removedIds.forEach((id) => delete next[id]);
-                  return next;
-                });
-              }
-              return { ...g, iterations: kept };
-            }).filter((g) => g.iterations.length > 0)
+            prev
+              .map((g) => {
+                if (g.id !== groupId) return g;
+                const kept = g.iterations.filter((iter) => !iter.isLoading);
+                const removedIds = g.iterations
+                  .filter((iter) => iter.isLoading)
+                  .map((iter) => iter.id);
+                if (removedIds.length) {
+                  setPipelineStages((prev) => {
+                    const next = { ...prev };
+                    removedIds.forEach((id) => delete next[id]);
+                    return next;
+                  });
+                }
+                return { ...g, iterations: kept };
+              })
+              .filter((g) => g.iterations.length > 0),
           );
         } else {
           const msg = err instanceof Error ? err.message : "Generation failed";
@@ -805,20 +939,22 @@ export default function Home() {
                   };
                 }),
               };
-            })
+            }),
           );
         }
       } finally {
         abortRef.current = null;
         setIsGenerating(false);
         setGenStatus("");
+        updateCurrentProjectTimestamp();
       }
     },
-    [getGridPositions, settings, canvas, quickMode, runPipelineForFrame, canvasImages]
+    [getGridPositions, settings, canvas, quickMode, runPipelineForFrame, canvasImages, updateCurrentProjectTimestamp],
   );
 
   const handleRemix = useCallback(
     async (sourceIteration: DesignIteration, remixPrompt: string) => {
+      updateCurrentProjectTimestamp();
       setIsGenerating(true);
       const positions = getGridPositions(1);
       const remixId = `remix-${Date.now()}`;
@@ -835,8 +971,9 @@ export default function Home() {
         isLoading: true,
       };
 
-      // Find the group this iteration belongs to, or create a new one
-      const sourceGroup = groups.find((g) => g.iterations.some((it) => it.id === sourceIteration.id));
+      const sourceGroup = groups.find((g) =>
+        g.iterations.some((it) => it.id === sourceIteration.id),
+      );
       const newGroup: GenerationGroup = {
         id: `group-${remixId}`,
         prompt: `Remix: ${remixPrompt}`,
@@ -868,24 +1005,28 @@ export default function Home() {
             if (g.id !== newGroup.id) return g;
             return {
               ...g,
-              iterations: [{
-                ...placeholder,
-                html: result.html || "<p>Remix failed</p>",
-                label: result.label || "Remix",
-                width: result.width || placeholder.width,
-                height: result.height || placeholder.height,
-                isLoading: false,
-              }],
+              iterations: [
+                {
+                  ...placeholder,
+                  html: result.html || "<p>Remix failed</p>",
+                  label: result.label || "Remix",
+                  width: result.width || placeholder.width,
+                  height: result.height || placeholder.height,
+                  isLoading: false,
+                },
+              ],
             };
-          })
+          }),
         );
       } catch (err: unknown) {
         if (err instanceof Error && err.name === "AbortError") {
           setGroups((prev) =>
-            prev.map((g) => {
-              if (g.id !== newGroup.id) return g;
-              return { ...g, iterations: g.iterations.filter((iter) => !iter.isLoading) };
-            }).filter((g) => g.iterations.length > 0)
+            prev
+              .map((g) => {
+                if (g.id !== newGroup.id) return g;
+                return { ...g, iterations: g.iterations.filter((iter) => !iter.isLoading) };
+              })
+              .filter((g) => g.iterations.length > 0),
           );
         } else {
           const msg = err instanceof Error ? err.message : "Remix failed";
@@ -894,9 +1035,15 @@ export default function Home() {
               if (g.id !== newGroup.id) return g;
               return {
                 ...g,
-                iterations: [{ ...placeholder, html: `<div style="padding:32px;color:#666;font-family:system-ui"><p style="font-size:14px">⚠ ${msg}</p></div>`, isLoading: false }],
+                iterations: [
+                  {
+                    ...placeholder,
+                    html: `<div style="padding:32px;color:#666;font-family:system-ui"><p style="font-size:14px">⚠ ${msg}</p></div>`,
+                    isLoading: false,
+                  },
+                ],
               };
-            })
+            }),
           );
         }
       } finally {
@@ -904,8 +1051,22 @@ export default function Home() {
         setIsGenerating(false);
       }
     },
-    [getGridPositions, settings.apiKey, settings.model, groups]
+    [getGridPositions, settings.apiKey, settings.model, groups, runPipelineForFrame, updateCurrentProjectTimestamp],
   );
+
+  const handleSwitchProject = useCallback(
+    (id: string) => {
+      switchProject(id);
+      canvas.resetView();
+    },
+    [switchProject, canvas],
+  );
+
+  const handleCreateNewProject = useCallback(() => {
+    createProject("New Project");
+    resetSession();
+    canvas.resetView();
+  }, [createProject, resetSession, canvas]);
 
   const handleAddComment = useCallback(
     (iterationId: string, position: Point) => {
@@ -917,13 +1078,9 @@ export default function Home() {
         const iter = group.iterations.find((it) => it.id === iterationId);
         if (iter) {
           const absScreenX =
-            (iter.position.x + position.x) * canvas.scale +
-            canvas.offset.x +
-            rect.left;
+            (iter.position.x + position.x) * canvas.scale + canvas.offset.x + rect.left;
           const absScreenY =
-            (iter.position.y + position.y) * canvas.scale +
-            canvas.offset.y +
-            rect.top;
+            (iter.position.y + position.y) * canvas.scale + canvas.offset.y + rect.top;
           setCommentDraft({
             iterationId,
             position,
@@ -934,7 +1091,7 @@ export default function Home() {
         }
       }
     },
-    [canvas.offset, canvas.scale, groups]
+    [canvas.offset, canvas.scale, groups],
   );
 
   // --- Comment revision queue ---
@@ -956,12 +1113,10 @@ export default function Home() {
           if (iter.id !== iterId) return iter;
           return {
             ...iter,
-            comments: iter.comments.map((c) =>
-              c.id === cId ? { ...c, ...update } : c
-            ),
+            comments: iter.comments.map((c) => (c.id === cId ? { ...c, ...update } : c)),
           };
         }),
-      }))
+      })),
     );
   }, []);
 
@@ -975,9 +1130,7 @@ export default function Home() {
 
       // Mark as working and update active comment if open
       updateComment(iterationId, commentId, { status: "working" });
-      setActiveComment((prev) =>
-        prev?.id === commentId ? { ...prev, status: "working" } : prev
-      );
+      setActiveComment((prev) => (prev?.id === commentId ? { ...prev, status: "working" } : prev));
 
       // Get latest iteration HTML and comment thread from ref (always current)
       let currentHtml = "";
@@ -1019,7 +1172,7 @@ export default function Home() {
                 height: result.height || iter.height,
               };
             }),
-          }))
+          })),
         );
 
         const ottoResponse: CommentMessage = {
@@ -1037,7 +1190,7 @@ export default function Home() {
         setActiveComment((prev) =>
           prev?.id === commentId
             ? { ...prev, status: "done", aiResponse: ottoResponse.text, thread: doneThread }
-            : prev
+            : prev,
         );
       } catch (err) {
         console.error("Revision failed:", err);
@@ -1056,7 +1209,7 @@ export default function Home() {
         setActiveComment((prev) =>
           prev?.id === commentId
             ? { ...prev, status: "done", aiResponse: errorResponse.text, thread: errorThread }
-            : prev
+            : prev,
         );
       }
 
@@ -1104,7 +1257,7 @@ export default function Home() {
             }
             return iter;
           }),
-        }))
+        })),
       );
 
       setCommentDraft(null);
@@ -1120,7 +1273,7 @@ export default function Home() {
       // Kick off processing if not already running
       processRevisionQueue();
     },
-    [commentDraft, processRevisionQueue]
+    [commentDraft, processRevisionQueue],
   );
 
   const handleClickComment = useCallback((comment: CommentType, iterationId: string) => {
@@ -1136,7 +1289,12 @@ export default function Home() {
       const commentId = activeComment.id;
       const iterId = activeCommentIterationId;
       const currentThread = activeComment.thread || [
-        { id: "msg-0", role: "user" as const, text: activeComment.text, createdAt: activeComment.createdAt },
+        {
+          id: "msg-0",
+          role: "user" as const,
+          text: activeComment.text,
+          createdAt: activeComment.createdAt,
+        },
       ];
 
       const userMessage: CommentMessage = {
@@ -1149,7 +1307,9 @@ export default function Home() {
 
       // Update thread immediately in UI
       updateComment(iterId, commentId, { thread: updatedThread, status: "waiting" });
-      setActiveComment((prev) => prev ? { ...prev, thread: updatedThread, status: "waiting" } : prev);
+      setActiveComment((prev) =>
+        prev ? { ...prev, thread: updatedThread, status: "waiting" } : prev,
+      );
 
       // Queue the revision
       revisionQueueRef.current.push({
@@ -1161,7 +1321,7 @@ export default function Home() {
 
       processRevisionQueue();
     },
-    [activeComment, activeCommentIterationId, updateComment, processRevisionQueue]
+    [activeComment, activeCommentIterationId, updateComment, processRevisionQueue],
   );
 
   // Frame drag handlers
@@ -1194,7 +1354,7 @@ export default function Home() {
         }
       }
     },
-    [toolMode, spaceHeld, groups, selectedIds]
+    [toolMode, spaceHeld, groups, selectedIds],
   );
 
   // Store start positions for all selected frames during multi-drag
@@ -1217,10 +1377,10 @@ export default function Home() {
             const startPos = dragStartPositions.current.get(iter.id) || iter.position;
             return { ...iter, position: { x: startPos.x + dx, y: startPos.y + dy } };
           }),
-        }))
+        })),
       );
     },
-    [canvas.scale, selectedIds]
+    [canvas.scale, selectedIds],
   );
 
   const handleFrameDragEnd = useCallback(() => {
@@ -1231,7 +1391,9 @@ export default function Home() {
   const canPan = spaceHeld && !draggingId;
   const isSelectMode = toolMode === "select" && !spaceHeld;
 
-  const allIterations = groups.flatMap((g) => g.iterations.map((iter) => ({ ...iter, groupId: g.id })));
+  const allIterations = groups.flatMap((g) =>
+    g.iterations.map((iter) => ({ ...iter, groupId: g.id })),
+  );
 
   return (
     <div className="h-screen w-screen overflow-hidden relative select-none">
@@ -1249,7 +1411,12 @@ export default function Home() {
           if (isSelectMode && !draggingId) {
             // Start rubber band selection on empty canvas
             if (!e.shiftKey) setSelectedIds(new Set());
-            setRubberBand({ startX: e.clientX, startY: e.clientY, currentX: e.clientX, currentY: e.clientY });
+            setRubberBand({
+              startX: e.clientX,
+              startY: e.clientY,
+              currentX: e.clientX,
+              currentY: e.clientY,
+            });
           }
         }}
         onMouseMove={(e) => {
@@ -1258,7 +1425,9 @@ export default function Home() {
           } else if (draggingId) {
             handleFrameDragMove(e);
           } else if (rubberBand) {
-            setRubberBand((prev) => prev ? { ...prev, currentX: e.clientX, currentY: e.clientY } : null);
+            setRubberBand((prev) =>
+              prev ? { ...prev, currentX: e.clientX, currentY: e.clientY } : null,
+            );
           } else {
             canvas.onMouseMove(e);
           }
@@ -1293,7 +1462,12 @@ export default function Home() {
                 const iy = iter.position.y;
                 const iw = iter.width || FRAME_WIDTH;
                 const ih = iter.height || 300;
-                if (ix + iw > canvasMinX && ix < canvasMaxX && iy + ih > canvasMinY && iy < canvasMaxY) {
+                if (
+                  ix + iw > canvasMinX &&
+                  ix < canvasMaxX &&
+                  iy + ih > canvasMinY &&
+                  iy < canvasMaxY
+                ) {
                   newSelected.add(iter.id);
                 }
               }
@@ -1301,7 +1475,12 @@ export default function Home() {
               for (const img of canvasImages) {
                 const ix = img.position.x;
                 const iy = img.position.y;
-                if (ix + img.width > canvasMinX && ix < canvasMaxX && iy + img.height > canvasMinY && iy < canvasMaxY) {
+                if (
+                  ix + img.width > canvasMinX &&
+                  ix < canvasMaxX &&
+                  iy + img.height > canvasMinY &&
+                  iy < canvasMaxY
+                ) {
                   newSelected.add(img.id);
                 }
               }
@@ -1313,9 +1492,19 @@ export default function Home() {
           }
         }}
         onMouseLeave={() => {
-          if (draggingImageId) { handleImageDragEnd(); } else if (draggingId) { handleFrameDragEnd(); } else { setRubberBand(null); canvas.onMouseUp(); }
+          if (draggingImageId) {
+            handleImageDragEnd();
+          } else if (draggingId) {
+            handleFrameDragEnd();
+          } else {
+            setRubberBand(null);
+            canvas.onMouseUp();
+          }
         }}
-        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+        }}
         onDrop={(e) => {
           e.preventDefault();
           const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
@@ -1338,9 +1527,12 @@ export default function Home() {
                 selectedIds.has(img.id)
                   ? "ring-2 ring-blue-500 border-blue-400/50 shadow-lg"
                   : "border border-white/40 hover:shadow-lg"
-              } ${toolMode === "select" && !spaceHeld
-                ? (draggingImageId === img.id ? "cursor-grabbing shadow-xl ring-2 ring-blue-400/30" : "cursor-grab")
-                : ""
+              } ${
+                toolMode === "select" && !spaceHeld
+                  ? draggingImageId === img.id
+                    ? "cursor-grabbing shadow-xl ring-2 ring-blue-400/30"
+                    : "cursor-grab"
+                  : ""
               }`}
               style={{
                 left: img.position.x,
@@ -1418,7 +1610,7 @@ export default function Home() {
                 x={iteration.position.x}
                 y={iteration.position.y}
                 width={iteration.width || FRAME_WIDTH}
-                frameHeight={iteration.isLoading ? 320 : (iteration.height || 320)}
+                frameHeight={iteration.isLoading ? 320 : iteration.height || 320}
               />
             );
           })}
@@ -1428,12 +1620,8 @@ export default function Home() {
         {groups.length === 0 && canvasImages.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <div className="text-center">
-              <h1 className="text-2xl font-semibold text-gray-300 mb-2">
-                Otto Canvas
-              </h1>
-              <p className="text-gray-400/70 text-sm">
-                Type a prompt below to generate designs
-              </p>
+              <h1 className="text-2xl font-semibold text-gray-300 mb-2">Otto Canvas</h1>
+              <p className="text-gray-400/70 text-sm">Type a prompt below to generate designs</p>
             </div>
           </div>
         )}
@@ -1473,7 +1661,28 @@ export default function Home() {
         onToggleZoomControls={() => setSettings({ showZoomControls: !settings.showZoomControls })}
       />
 
-      <PromptBar onSubmit={handleGenerate} isGenerating={isGenerating} genStatus={genStatus} onCancel={() => abortRef.current?.abort()} imageCount={canvasImages.length} />
+      <SessionSidebar
+        open={showSidebar}
+        onClose={() => setShowSidebar(false)}
+        projects={projects}
+        currentProjectId={currentProjectId}
+        currentProject={currentProject || null}
+        groups={groups}
+        canvasImages={canvasImages}
+        onSwitchProject={handleSwitchProject}
+        onRenameProject={renameProject}
+        onCreateNewProject={handleCreateNewProject}
+      />
+
+      {!showSidebar && <BurgerButton onClick={() => setShowSidebar(true)} />}
+
+      <PromptBar
+        onSubmit={handleGenerate}
+        isGenerating={isGenerating}
+        genStatus={genStatus}
+        onCancel={() => abortRef.current?.abort()}
+        imageCount={canvasImages.length}
+      />
 
       {/* Dev mode build badge */}
       {showGitHash && (
@@ -1498,7 +1707,10 @@ export default function Home() {
       {activeComment && (
         <CommentThread
           comment={activeComment}
-          onClose={() => { setActiveComment(null); setActiveCommentIterationId(null); }}
+          onClose={() => {
+            setActiveComment(null);
+            setActiveCommentIterationId(null);
+          }}
           onReply={handleCommentReply}
         />
       )}
@@ -1529,10 +1741,15 @@ export default function Home() {
       {/* Reset confirm dialog */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowResetConfirm(false)} />
+          <div
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setShowResetConfirm(false)}
+          />
           <div className="relative bg-white/60 backdrop-blur-2xl rounded-2xl border border-white/60 shadow-[0_24px_80px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.7)] p-8 w-[380px] max-w-[90vw] text-center">
             <h3 className="text-[15px] font-semibold text-gray-800 mb-2">Start new session?</h3>
-            <p className="text-[13px] text-gray-500 mb-6">This will clear your current canvas. Generated designs will be lost.</p>
+            <p className="text-[13px] text-gray-500 mb-6">
+              This will clear your current canvas. Generated designs will be lost.
+            </p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => setShowResetConfirm(false)}
@@ -1575,7 +1792,10 @@ export default function Home() {
       {onboarding.showTour && (
         <GuidedTour
           onComplete={() => onboarding.completeTour()}
-          hasFrames={groups.length > 0 && groups.some(g => g.iterations.some(i => !i.isLoading && i.html))}
+          hasFrames={
+            groups.length > 0 &&
+            groups.some((g) => g.iterations.some((i) => !i.isLoading && i.html))
+          }
         />
       )}
 
@@ -1589,16 +1809,6 @@ export default function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             Add your API key in Settings to start designing
           </button>
-        </div>
-      )}
-
-      {/* RPC Connection Indicator */}
-      {rpcConnected && (
-        <div className="fixed top-4 right-4 z-40">
-          <div className="flex items-center gap-2 px-2 py-1 bg-green-500/10 text-green-400 rounded text-xs">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            CLI Connected
-          </div>
         </div>
       )}
     </div>
