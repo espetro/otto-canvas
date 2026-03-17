@@ -29,10 +29,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ result: htmlToSvg(html) });
 
       case "tailwind":
-        return NextResponse.json({ result: await convertWithAI(client, useModel, html, TAILWIND_PROMPT) });
+        return NextResponse.json({
+          result: await convertWithAI(client, useModel, html, TAILWIND_PROMPT),
+        });
 
       case "react":
-        return NextResponse.json({ result: await convertWithAI(client, useModel, html, REACT_PROMPT) });
+        return NextResponse.json({
+          result: await convertWithAI(client, useModel, html, REACT_PROMPT),
+        });
 
       default:
         return NextResponse.json({ error: "Invalid format" }, { status: 400 });
@@ -88,7 +92,12 @@ RULES:
 - Make it a clean, production-ready component
 - Import React at the top`;
 
-async function convertWithAI(client: Anthropic, model: string, html: string, systemPrompt: string): Promise<string> {
+async function convertWithAI(
+  client: Anthropic,
+  model: string,
+  html: string,
+  systemPrompt: string,
+): Promise<string> {
   const message = await client.messages.create({
     model,
     max_tokens: 4096,

@@ -1,10 +1,10 @@
-import { Args, Command, Flags } from '@oclif/core';
-import { render } from 'ink';
-import React from 'react';
-import { Progress } from '../components/Progress.js';
-import type { GenerateRequest, GenerateResponse } from '../gen/proto/canvas.js';
+import { Args, Command, Flags } from "@oclif/core";
+import { render } from "ink";
+import React from "react";
+import { Progress } from "../components/Progress.js";
+import type { GenerateRequest, GenerateResponse } from "../gen/proto/canvas.js";
 
-const RPC_URL = 'http://localhost:3000/rpc';
+const RPC_URL = "http://localhost:3000/rpc";
 
 interface GenerateResult {
   designId: string;
@@ -20,12 +20,12 @@ interface GenerateResult {
 export default class Generate extends Command {
   static args = {
     prompt: Args.string({
-      description: 'Design prompt',
+      description: "Design prompt",
       required: true,
     }),
   };
 
-  static description = 'Generate a design using AI';
+  static description = "Generate a design using AI";
 
   static examples = [
     '$ otto-cli generate "A pricing card with 3 tiers"',
@@ -34,14 +34,19 @@ export default class Generate extends Command {
 
   static flags = {
     iterations: Flags.integer({
-      char: 'i',
-      description: 'Number of iterations',
+      char: "i",
+      description: "Number of iterations",
       default: 1,
     }),
     style: Flags.string({
-      char: 's',
-      description: 'Design style',
-      default: 'default',
+      char: "s",
+      description: "Design style",
+      default: "default",
+    }),
+    verbose: Flags.boolean({
+      char: "v",
+      description: "Show verbose error output",
+      default: false,
     }),
   };
 
@@ -51,18 +56,16 @@ export default class Generate extends Command {
     this.log(`Prompt: ${args.prompt}`);
     this.log(`Iterations: ${flags.iterations}`);
     this.log(`Style: ${flags.style}`);
-    this.log('');
+    this.log("");
 
-    const { unmount } = render(
-      React.createElement(Progress, { message: 'Generating design...' })
-    );
+    const { unmount } = render(React.createElement(Progress, { message: "Generating design..." }));
 
     try {
       const response = await fetch(RPC_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
+          "Content-Type": "application/json",
+          "Connect-Protocol-Version": "1",
         },
         body: JSON.stringify({
           prompt: args.prompt,
@@ -87,7 +90,11 @@ export default class Generate extends Command {
       }
     } catch (error) {
       unmount();
-      this.error(`Failed to generate design: ${error}`);
+      if (flags.verbose) {
+        this.error(`Failed to generate design: ${error instanceof Error ? error.stack || error : error}`);
+      } else {
+        this.error(`Failed to generate design: ${error instanceof Error ? error.message : error}`);
+      }
     }
   }
 }

@@ -33,8 +33,7 @@ export interface RefineResponse {
 }
 
 /** Empty for now, can add filters later */
-export interface ListRequest {
-}
+export interface ListRequest {}
 
 export interface ListResponse {
   designs: Design[];
@@ -210,10 +209,12 @@ export const GenerateResponse: MessageFns<GenerateResponse> = {
       designId: isSet(object.designId)
         ? globalThis.String(object.designId)
         : isSet(object.design_id)
-        ? globalThis.String(object.design_id)
-        : "",
+          ? globalThis.String(object.design_id)
+          : "",
       status: isSet(object.status) ? globalThis.String(object.status) : "",
-      designs: globalThis.Array.isArray(object?.designs) ? object.designs.map((e: any) => Design.fromJSON(e)) : [],
+      designs: globalThis.Array.isArray(object?.designs)
+        ? object.designs.map((e: any) => Design.fromJSON(e))
+        : [],
     };
   },
 
@@ -295,8 +296,8 @@ export const RefineRequest: MessageFns<RefineRequest> = {
       designId: isSet(object.designId)
         ? globalThis.String(object.designId)
         : isSet(object.design_id)
-        ? globalThis.String(object.design_id)
-        : "",
+          ? globalThis.String(object.design_id)
+          : "",
       feedback: isSet(object.feedback) ? globalThis.String(object.feedback) : "",
     };
   },
@@ -375,8 +376,8 @@ export const RefineResponse: MessageFns<RefineResponse> = {
       designId: isSet(object.designId)
         ? globalThis.String(object.designId)
         : isSet(object.design_id)
-        ? globalThis.String(object.design_id)
-        : "",
+          ? globalThis.String(object.design_id)
+          : "",
       status: isSet(object.status) ? globalThis.String(object.status) : "",
     };
   },
@@ -484,7 +485,9 @@ export const ListResponse: MessageFns<ListResponse> = {
 
   fromJSON(object: any): ListResponse {
     return {
-      designs: globalThis.Array.isArray(object?.designs) ? object.designs.map((e: any) => Design.fromJSON(e)) : [],
+      designs: globalThis.Array.isArray(object?.designs)
+        ? object.designs.map((e: any) => Design.fromJSON(e))
+        : [],
     };
   },
 
@@ -547,8 +550,8 @@ export const SelectRequest: MessageFns<SelectRequest> = {
       designId: isSet(object.designId)
         ? globalThis.String(object.designId)
         : isSet(object.design_id)
-        ? globalThis.String(object.design_id)
-        : "",
+          ? globalThis.String(object.design_id)
+          : "",
     };
   },
 
@@ -704,13 +707,13 @@ export const Design: MessageFns<Design> = {
       htmlContent: isSet(object.htmlContent)
         ? globalThis.String(object.htmlContent)
         : isSet(object.html_content)
-        ? globalThis.String(object.html_content)
-        : "",
+          ? globalThis.String(object.html_content)
+          : "",
       createdAt: isSet(object.createdAt)
         ? globalThis.Number(object.createdAt)
         : isSet(object.created_at)
-        ? globalThis.Number(object.created_at)
-        : 0,
+          ? globalThis.Number(object.created_at)
+          : 0,
     };
   },
 
@@ -745,29 +748,58 @@ export const Design: MessageFns<Design> = {
 };
 
 export interface CanvasServiceImplementation<CallContextExt = {}> {
-  generate(request: GenerateRequest, context: CallContext & CallContextExt): Promise<DeepPartial<GenerateResponse>>;
-  refine(request: RefineRequest, context: CallContext & CallContextExt): Promise<DeepPartial<RefineResponse>>;
-  list(request: ListRequest, context: CallContext & CallContextExt): Promise<DeepPartial<ListResponse>>;
-  select(request: SelectRequest, context: CallContext & CallContextExt): Promise<DeepPartial<SelectResponse>>;
+  generate(
+    request: GenerateRequest,
+    context: CallContext & CallContextExt,
+  ): Promise<DeepPartial<GenerateResponse>>;
+  refine(
+    request: RefineRequest,
+    context: CallContext & CallContextExt,
+  ): Promise<DeepPartial<RefineResponse>>;
+  list(
+    request: ListRequest,
+    context: CallContext & CallContextExt,
+  ): Promise<DeepPartial<ListResponse>>;
+  select(
+    request: SelectRequest,
+    context: CallContext & CallContextExt,
+  ): Promise<DeepPartial<SelectResponse>>;
 }
 
 export interface CanvasServiceClient<CallOptionsExt = {}> {
-  generate(request: DeepPartial<GenerateRequest>, options?: CallOptions & CallOptionsExt): Promise<GenerateResponse>;
-  refine(request: DeepPartial<RefineRequest>, options?: CallOptions & CallOptionsExt): Promise<RefineResponse>;
-  list(request: DeepPartial<ListRequest>, options?: CallOptions & CallOptionsExt): Promise<ListResponse>;
-  select(request: DeepPartial<SelectRequest>, options?: CallOptions & CallOptionsExt): Promise<SelectResponse>;
+  generate(
+    request: DeepPartial<GenerateRequest>,
+    options?: CallOptions & CallOptionsExt,
+  ): Promise<GenerateResponse>;
+  refine(
+    request: DeepPartial<RefineRequest>,
+    options?: CallOptions & CallOptionsExt,
+  ): Promise<RefineResponse>;
+  list(
+    request: DeepPartial<ListRequest>,
+    options?: CallOptions & CallOptionsExt,
+  ): Promise<ListResponse>;
+  select(
+    request: DeepPartial<SelectRequest>,
+    options?: CallOptions & CallOptionsExt,
+  ): Promise<SelectResponse>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
+export type DeepPartial<T> = T extends Builtin
+  ? T
+  : T extends globalThis.Array<infer U>
+    ? globalThis.Array<DeepPartial<U>>
+    : T extends ReadonlyArray<infer U>
+      ? ReadonlyArray<DeepPartial<U>>
+      : T extends {}
+        ? { [K in keyof T]?: DeepPartial<T[K]> }
+        : Partial<T>;
 
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
+export type Exact<P, I extends P> = P extends Builtin
+  ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToNumber(int64: { toString(): string }): number {

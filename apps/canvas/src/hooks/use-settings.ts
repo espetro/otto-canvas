@@ -125,10 +125,9 @@ export function useSettings() {
     }
 
     // Check if credentials changed - if so, clear cache and refetch
-    const credentialsChanged = 
-      settings.apiKey !== lastFetchedKey || 
-      settings.anthropicApiUrl !== lastFetchedUrl;
-    
+    const credentialsChanged =
+      settings.apiKey !== lastFetchedKey || settings.anthropicApiUrl !== lastFetchedUrl;
+
     // Check if cache is still valid (only if credentials haven't changed)
     const now = Date.now();
     if (!credentialsChanged && modelsCacheTime && now - modelsCacheTime < MODELS_CACHE_DURATION) {
@@ -185,13 +184,13 @@ export function useSettings() {
     availableModels[m.id] = true;
   }
 
-  return { 
-    settings, 
-    setSettings, 
-    isOwnKey, 
-    hasGeminiKey, 
-    loaded, 
-    availableModels, 
+  return {
+    settings,
+    setSettings,
+    isOwnKey,
+    hasGeminiKey,
+    loaded,
+    availableModels,
     isProbing: isLoadingModels,
     cachedModels,
     modelsFetchError,

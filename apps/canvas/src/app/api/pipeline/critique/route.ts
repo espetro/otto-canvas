@@ -23,9 +23,10 @@ export async function POST(req: NextRequest) {
     const message = await client.messages.create({
       model: useModel,
       max_tokens: 1024,
-      messages: [{
-        role: "user",
-        content: `You are a design critic. Analyze this HTML/CSS design and provide specific, actionable feedback for improving the NEXT variation.
+      messages: [
+        {
+          role: "user",
+          content: `You are a design critic. Analyze this HTML/CSS design and provide specific, actionable feedback for improving the NEXT variation.
 
 Original request: "${prompt}"
 
@@ -38,7 +39,8 @@ Provide 3-5 bullet points of specific improvements. Focus on:
 - A different creative direction to try
 
 Be specific and concise. This feedback will be injected into the next generation prompt.`,
-      }],
+        },
+      ],
     });
 
     const critique = message.content[0].type === "text" ? message.content[0].text : "";

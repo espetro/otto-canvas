@@ -8,7 +8,7 @@ import type {
   SelectRequest,
   SelectResponse,
   Design,
-} from '@/gen/proto/canvas';
+} from "@/gen/proto/canvas";
 
 const designs = new Map<string, Design>();
 let designCounter = 0;
@@ -26,7 +26,7 @@ export const canvasServiceImpl = {
 
     return {
       designId,
-      status: 'completed',
+      status: "completed",
       designs: [design],
     };
   },
@@ -40,7 +40,7 @@ export const canvasServiceImpl = {
     design.htmlContent += `<!-- Refined with: ${req.feedback} -->`;
     return {
       designId: req.designId,
-      status: 'completed',
+      status: "completed",
     };
   },
 

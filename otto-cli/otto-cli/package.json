@@ -1,12 +1,35 @@
 {
   "name": "otto-cli",
-  "description": "A new CLI generated with oclif",
   "version": "0.0.0",
+  "description": "A new CLI generated with oclif",
+  "keywords": [
+    "oclif"
+  ],
+  "homepage": "https://github.com/otto-cli/otto-cli",
+  "bugs": "https://github.com/otto-cli/otto-cli/issues",
+  "license": "MIT",
   "author": "Joaquin Terrasa",
+  "repository": "otto-cli/otto-cli",
   "bin": {
     "otto-cli": "./bin/run.js"
   },
-  "bugs": "https://github.com/otto-cli/otto-cli/issues",
+  "files": [
+    "./bin",
+    "./dist",
+    "./oclif.manifest.json"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "posttest": "npm run lint",
+    "prepack": "oclif manifest && oclif readme",
+    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif readme && git add README.md"
+  },
   "dependencies": {
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-node": "^2.1.1",
@@ -36,25 +59,10 @@
     "ts-node": "^10",
     "typescript": "^5"
   },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "files": [
-    "./bin",
-    "./dist",
-    "./oclif.manifest.json"
-  ],
-  "homepage": "https://github.com/otto-cli/otto-cli",
-  "keywords": [
-    "oclif"
-  ],
-  "license": "MIT",
-  "main": "dist/index.js",
-  "type": "module",
   "oclif": {
     "bin": "otto-cli",
-    "dirname": "otto-cli",
     "commands": "./dist/commands",
+    "dirname": "otto-cli",
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-plugins"
@@ -66,15 +74,7 @@
       }
     }
   },
-  "repository": "otto-cli/otto-cli",
-  "scripts": {
-    "build": "shx rm -rf dist && tsc -b",
-    "lint": "eslint",
-    "postpack": "shx rm -f oclif.manifest.json",
-    "posttest": "npm run lint",
-    "prepack": "oclif manifest && oclif readme",
-    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
-    "version": "oclif readme && git add README.md"
-  },
-  "types": "dist/index.d.ts"
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

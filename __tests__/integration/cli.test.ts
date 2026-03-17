@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
+import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 
-describe('CLI Integration', () => {
-  const RPC_URL = 'http://localhost:3000/rpc';
+describe("CLI Integration", () => {
+  const RPC_URL = "http://localhost:3000/rpc";
   let serverAvailable = false;
 
   beforeAll(async () => {
     try {
       const response = await fetch(RPC_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
+          "Content-Type": "application/json",
+          "Connect-Protocol-Version": "1",
         },
         body: JSON.stringify({ list: {} }),
       });
@@ -20,24 +20,26 @@ describe('CLI Integration', () => {
     }
 
     if (!serverAvailable) {
-      console.warn('\n⚠️  Integration tests skipped: RPC server not running at http://localhost:3000/rpc');
-      console.warn('   Start the dev server with: pnpm dev\n');
+      console.warn(
+        "\n⚠️  Integration tests skipped: RPC server not running at http://localhost:3000/rpc",
+      );
+      console.warn("   Start the dev server with: pnpm dev\n");
     }
   });
 
-  describe('generate command', () => {
-    it.skipIf(!serverAvailable)('should generate a design via RPC', async () => {
+  describe("generate command", () => {
+    it.skipIf(!serverAvailable)("should generate a design via RPC", async () => {
       const response = await fetch(RPC_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
+          "Content-Type": "application/json",
+          "Connect-Protocol-Version": "1",
         },
         body: JSON.stringify({
           generate: {
-            prompt: 'A pricing card',
+            prompt: "A pricing card",
             iterations: 1,
-            style: 'default',
+            style: "default",
           },
         }),
       });
@@ -45,17 +47,17 @@ describe('CLI Integration', () => {
       expect(response.ok).toBe(true);
       const result = await response.json();
       expect(result.designId).toBeDefined();
-      expect(result.status).toBe('completed');
+      expect(result.status).toBe("completed");
     });
   });
 
-  describe('list command', () => {
-    it.skipIf(!serverAvailable)('should list all designs', async () => {
+  describe("list command", () => {
+    it.skipIf(!serverAvailable)("should list all designs", async () => {
       const response = await fetch(RPC_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
+          "Content-Type": "application/json",
+          "Connect-Protocol-Version": "1",
         },
         body: JSON.stringify({ list: {} }),
       });
@@ -67,20 +69,20 @@ describe('CLI Integration', () => {
     });
   });
 
-  describe('E2E workflow', () => {
-    it.skipIf(!serverAvailable)('should complete full design workflow', async () => {
+  describe("E2E workflow", () => {
+    it.skipIf(!serverAvailable)("should complete full design workflow", async () => {
       // Step 1: Generate
       const genResponse = await fetch(RPC_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
+          "Content-Type": "application/json",
+          "Connect-Protocol-Version": "1",
         },
         body: JSON.stringify({
           generate: {
-            prompt: 'Integration test design',
+            prompt: "Integration test design",
             iterations: 1,
-            style: 'default',
+            style: "default",
           },
         }),
       });
@@ -91,10 +93,10 @@ describe('CLI Integration', () => {
 
       // Step 2: Select
       const selectResponse = await fetch(RPC_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
+          "Content-Type": "application/json",
+          "Connect-Protocol-Version": "1",
         },
         body: JSON.stringify({
           select: { designId },
@@ -107,22 +109,22 @@ describe('CLI Integration', () => {
 
       // Step 3: Refine
       const refineResponse = await fetch(RPC_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
+          "Content-Type": "application/json",
+          "Connect-Protocol-Version": "1",
         },
         body: JSON.stringify({
           refine: {
             designId,
-            feedback: 'Make it better',
+            feedback: "Make it better",
           },
         }),
       });
 
       expect(refineResponse.ok).toBe(true);
       const refineResult = await refineResponse.json();
-      expect(refineResult.status).toBe('completed');
+      expect(refineResult.status).toBe("completed");
     });
   });
 });

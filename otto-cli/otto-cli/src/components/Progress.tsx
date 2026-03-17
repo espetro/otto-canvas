@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Text } from 'ink';
-import { Spinner } from './Spinner.js';
+import React from "react";
+import { Box, Text } from "ink";
+import { Spinner } from "./Spinner.js";
 
 interface ProgressProps {
   message: string;
@@ -13,7 +13,9 @@ export function Progress({ message, isComplete }: ProgressProps) {
       {isComplete ? (
         <Text color="green">✓ </Text>
       ) : (
-        <Text color="blue"><Spinner /></Text>
+        <Text color="blue">
+          <Spinner />
+        </Text>
       )}
       <Text>{message}</Text>
     </Box>

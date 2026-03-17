@@ -24,9 +24,10 @@ export async function POST(req: NextRequest) {
     const message = await client.messages.create({
       model: useModel,
       max_tokens: 16384,
-      messages: [{
-        role: "user",
-        content: `You are a design quality reviewer. Review this HTML/CSS design and fix any issues.
+      messages: [
+        {
+          role: "user",
+          content: `You are a design quality reviewer. Review this HTML/CSS design and fix any issues.
 
 Original request: "${prompt}"
 Target size: ${width || "auto"}x${height || "auto"}
@@ -53,12 +54,17 @@ RULES:
 - Keep the same structure and images (don't remove <img> tags)
 - No animations, transitions, or hover effects
 - Self-contained, no external dependencies`,
-      }],
+        },
+      ],
     });
 
     const raw = message.content[0].type === "text" ? message.content[0].text : "";
     const parsed = parseHtmlWithSize(raw);
-    return NextResponse.json({ html: restore(parsed.html), width: parsed.width || width, height: parsed.height || height });
+    return NextResponse.json({
+      html: restore(parsed.html),
+      width: parsed.width || width,
+      height: parsed.height || height,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Review failed";
     console.error("Review error:", msg);

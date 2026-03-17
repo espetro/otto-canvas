@@ -15,7 +15,10 @@ interface Placeholder {
 }
 
 /** Strip base64 data URIs from HTML, returning stripped HTML and restore function */
-export function stripBase64Images(html: string): { stripped: string; restore: (output: string) => string } {
+export function stripBase64Images(html: string): {
+  stripped: string;
+  restore: (output: string) => string;
+} {
   const images: string[] = [];
   const stripped = html.replace(/src="(data:image\/[^"]+)"/g, (_match, dataUri) => {
     const idx = images.length;
@@ -35,10 +38,15 @@ export function stripBase64Images(html: string): { stripped: string; restore: (o
 /** Parse image placeholder divs from HTML */
 export function parseImagePlaceholders(html: string, availableSources: string[]): Placeholder[] {
   const placeholders: Placeholder[] = [];
-  const regex = /data-placeholder="([^"]+)"\s+data-ph-w="(\d+)"\s+data-ph-h="(\d+)"(?:\s+data-img-source="([^"]*)")?(?:\s+data-img-query="([^"]*)")?/g;
+  const regex =
+    /data-placeholder="([^"]+)"\s+data-ph-w="(\d+)"\s+data-ph-h="(\d+)"(?:\s+data-img-source="([^"]*)")?(?:\s+data-img-query="([^"]*)")?/g;
   let match;
   let idx = 0;
-  const defaultSource: ImageSource = availableSources.includes("unsplash") ? "unsplash" : availableSources.includes("dalle") ? "dalle" : "gemini";
+  const defaultSource: ImageSource = availableSources.includes("unsplash")
+    ? "unsplash"
+    : availableSources.includes("dalle")
+      ? "dalle"
+      : "gemini";
   while ((match = regex.exec(html)) !== null) {
     let source = (match[4] || defaultSource) as ImageSource;
     if (!availableSources.includes(source)) source = defaultSource;
@@ -55,9 +63,14 @@ export function parseImagePlaceholders(html: string, availableSources: string[])
 }
 
 /** Replace placeholder divs with actual <img> tags */
-export function replacePlaceholdersWithImages(html: string, placeholders: Placeholder[], imageMap: Map<number, string>): string {
+export function replacePlaceholdersWithImages(
+  html: string,
+  placeholders: Placeholder[],
+  imageMap: Map<number, string>,
+): string {
   let result = html;
-  const replaceRegex = /<div\s+data-placeholder="[^"]*"\s+data-ph-w="\d+"\s+data-ph-h="\d+"[^>]*>[\s\S]*?<\/div>/g;
+  const replaceRegex =
+    /<div\s+data-placeholder="[^"]*"\s+data-ph-w="\d+"\s+data-ph-h="\d+"[^>]*>[\s\S]*?<\/div>/g;
   let replaceIdx = 0;
   result = result.replace(replaceRegex, (matchStr: string) => {
     const dataUrl = imageMap.get(replaceIdx);

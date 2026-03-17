@@ -1,26 +1,34 @@
-import { Command, Args } from '@oclif/core';
+import { Command, Args, Flags } from "@oclif/core";
 
 export default class Select extends Command {
   static args = {
     designId: Args.string({
-      description: 'Design ID to select',
+      description: "Design ID to select",
       required: true,
     }),
   };
 
-  async run(): Promise<void> {
-    const { args } = await this.parse(Select);
+  static flags = {
+    verbose: Flags.boolean({
+      char: "v",
+      description: "Show verbose error output",
+      default: false,
+    }),
+  };
 
-    const RPC_URL = 'http://localhost:3000/rpc';
+  async run(): Promise<void> {
+    const { args, flags } = await this.parse(Select);
+
+    const RPC_URL = "http://localhost:3000/rpc";
 
     try {
       this.log(`Selecting design ${args.designId}...`);
 
       const response = await fetch(RPC_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
+          "Content-Type": "application/json",
+          "Connect-Protocol-Version": "1",
         },
         body: JSON.stringify({
           select: {
@@ -42,7 +50,11 @@ export default class Select extends Command {
         this.error(`✗ Failed to select design ${args.designId}.`);
       }
     } catch (error) {
-      this.error(`✗ Failed to select design: ${error}`);
+      if (flags.verbose) {
+        this.error(`✗ Failed to select design: ${error instanceof Error ? error.stack || error : error}`);
+      } else {
+        this.error(`✗ Failed to select design: ${error instanceof Error ? error.message : error}`);
+      }
     }
   }
 }

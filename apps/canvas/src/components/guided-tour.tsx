@@ -14,13 +14,15 @@ const TOUR_STEPS: TourStep[] = [
   {
     target: "prompt-bar",
     title: "Describe your design",
-    description: "Type any design — a landing page, Instagram ad, app screen. Be specific about colors, style, and content.",
+    description:
+      "Type any design — a landing page, Instagram ad, app screen. Be specific about colors, style, and content.",
     placement: "top",
   },
   {
     target: "prompt-bar",
     title: "Generate",
-    description: "Hit Enter or click Generate. Otto creates multiple variations, each one learning from the last.",
+    description:
+      "Hit Enter or click Generate. Otto creates multiple variations, each one learning from the last.",
     placement: "top",
   },
   {
@@ -112,7 +114,9 @@ export function GuidedTour({ onComplete, hasFrames }: GuidedTourProps) {
     return (
       <div className="fixed inset-0 z-[75] pointer-events-none flex items-end justify-center pb-36">
         <div className="pointer-events-auto bg-white/70 backdrop-blur-2xl rounded-2xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.1)] px-5 py-3 text-center">
-          <p className="text-[13px] text-gray-600 font-medium">✨ Generate your first design to continue the tour</p>
+          <p className="text-[13px] text-gray-600 font-medium">
+            ✨ Generate your first design to continue the tour
+          </p>
           <button
             onClick={onComplete}
             className="mt-2 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
@@ -131,16 +135,32 @@ export function GuidedTour({ onComplete, hasFrames }: GuidedTourProps) {
   if (rect) {
     switch (placement) {
       case "top":
-        tooltipStyle = { left: rect.left + rect.width / 2, top: rect.top - pad, transform: "translate(-50%, -100%)" };
+        tooltipStyle = {
+          left: rect.left + rect.width / 2,
+          top: rect.top - pad,
+          transform: "translate(-50%, -100%)",
+        };
         break;
       case "bottom":
-        tooltipStyle = { left: rect.left + rect.width / 2, top: rect.top + rect.height + pad, transform: "translate(-50%, 0)" };
+        tooltipStyle = {
+          left: rect.left + rect.width / 2,
+          top: rect.top + rect.height + pad,
+          transform: "translate(-50%, 0)",
+        };
         break;
       case "left":
-        tooltipStyle = { left: rect.left - pad, top: rect.top + rect.height / 2, transform: "translate(-100%, -50%)" };
+        tooltipStyle = {
+          left: rect.left - pad,
+          top: rect.top + rect.height / 2,
+          transform: "translate(-100%, -50%)",
+        };
         break;
       case "right":
-        tooltipStyle = { left: rect.left + rect.width + pad, top: rect.top + rect.height / 2, transform: "translate(0, -50%)" };
+        tooltipStyle = {
+          left: rect.left + rect.width + pad,
+          top: rect.top + rect.height / 2,
+          transform: "translate(0, -50%)",
+        };
         break;
     }
   }
@@ -164,11 +184,7 @@ export function GuidedTour({ onComplete, hasFrames }: GuidedTourProps) {
             )}
           </mask>
         </defs>
-        <rect
-          width="100%" height="100%"
-          fill="rgba(0,0,0,0.45)"
-          mask="url(#spotlight-mask)"
-        />
+        <rect width="100%" height="100%" fill="rgba(0,0,0,0.45)" mask="url(#spotlight-mask)" />
       </svg>
 
       {/* Spotlight ring */}
@@ -187,10 +203,7 @@ export function GuidedTour({ onComplete, hasFrames }: GuidedTourProps) {
 
       {/* Tooltip */}
       {rect && (
-        <div
-          className="fixed z-[76] w-[280px]"
-          style={tooltipStyle}
-        >
+        <div className="fixed z-[76] w-[280px]" style={tooltipStyle}>
           <div className="bg-white/80 backdrop-blur-2xl rounded-2xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] p-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-semibold text-violet-500 uppercase tracking-wider">
@@ -198,7 +211,9 @@ export function GuidedTour({ onComplete, hasFrames }: GuidedTourProps) {
               </span>
             </div>
             <h3 className="text-[14px] font-semibold text-gray-800 mb-1">{currentStep.title}</h3>
-            <p className="text-[12px] text-gray-500 leading-relaxed mb-3">{currentStep.description}</p>
+            <p className="text-[12px] text-gray-500 leading-relaxed mb-3">
+              {currentStep.description}
+            </p>
             <div className="flex items-center justify-between">
               <button
                 onClick={onComplete}

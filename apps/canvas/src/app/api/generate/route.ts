@@ -27,11 +27,11 @@ async function callWithFallback(
   preferredModel: string,
   messages: Anthropic.MessageCreateParams["messages"],
   maxTokens: number,
-  modelList?: string[]
+  modelList?: string[],
 ): Promise<{ result: Anthropic.Message; usedModel: string }> {
   // Build fallback list from provided modelList or use default chain
   const fallbackChain = modelList?.length ? modelList : DEFAULT_FALLBACK_CHAIN;
-  
+
   // Build fallback list: preferred model first, then remaining chain models
   const idx = fallbackChain.indexOf(preferredModel);
   const fallbacks =
@@ -70,7 +70,19 @@ const VARIATION_STYLES = [
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, count = 4, revision, existingHtml, apiKey, anthropicApiUrl, model, variationIndex, concept, systemPrompt, modelList } = await req.json();
+    const {
+      prompt,
+      count = 4,
+      revision,
+      existingHtml,
+      apiKey,
+      anthropicApiUrl,
+      model,
+      variationIndex,
+      concept,
+      systemPrompt,
+      modelList,
+    } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt required" }, { status: 400 });
@@ -80,22 +92,45 @@ export async function POST(req: NextRequest) {
     const useModel = model || DEFAULT_MODEL;
 
     if (revision && existingHtml) {
-      const style = variationIndex !== undefined ? VARIATION_STYLES[variationIndex] || VARIATION_STYLES[0] : undefined;
-      const result = await generateSingle(client, useModel, prompt, revision, existingHtml, style, variationIndex, systemPrompt, modelList);
+      const style =
+        variationIndex !== undefined
+          ? VARIATION_STYLES[variationIndex] || VARIATION_STYLES[0]
+          : undefined;
+      const result = await generateSingle(
+        client,
+        useModel,
+        prompt,
+        revision,
+        existingHtml,
+        style,
+        variationIndex,
+        systemPrompt,
+        modelList,
+      );
       return NextResponse.json({ iteration: result });
     }
 
     // Single variation mode (sequential generation from frontend)
     if (variationIndex !== undefined) {
       const style = concept || VARIATION_STYLES[variationIndex] || VARIATION_STYLES[0];
-      const result = await generateVariation(client, useModel, prompt, style, variationIndex, systemPrompt, modelList);
+      const result = await generateVariation(
+        client,
+        useModel,
+        prompt,
+        style,
+        variationIndex,
+        systemPrompt,
+        modelList,
+      );
       return NextResponse.json({ iteration: result });
     }
 
     // Legacy: generate all at once
     const variations = VARIATION_STYLES.slice(0, count);
     const results = await Promise.all(
-      variations.map((style, i) => generateVariation(client, useModel, prompt, style, i, undefined, modelList))
+      variations.map((style, i) =>
+        generateVariation(client, useModel, prompt, style, i, undefined, modelList),
+      ),
     );
 
     return NextResponse.json({ iterations: results });
@@ -103,10 +138,16 @@ export async function POST(req: NextRequest) {
     console.error("Generation error:", err);
     const message = err instanceof Error ? err.message : "Failed to generate designs";
     if (message.includes("not_found") || message.includes("404")) {
-      return NextResponse.json({ error: "Model not available with this API key. Try a different model in Settings." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Model not available with this API key. Try a different model in Settings." },
+        { status: 400 },
+      );
     }
     if (message.includes("auth") || message.includes("401") || message.includes("API key")) {
-      return NextResponse.json({ error: "Invalid API key. Check your key in Settings." }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid API key. Check your key in Settings." },
+        { status: 401 },
+      );
     }
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -119,14 +160,19 @@ async function generateVariation(
   style: string,
   index: number,
   systemPrompt?: string,
-  modelList?: string[]
+  modelList?: string[],
 ): Promise<{ html: string; label: string; width?: number; height?: number }> {
-  const customInstructions = systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n` : "";
+  const customInstructions = systemPrompt
+    ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n`
+    : "";
 
-  const { result: message } = await callWithFallback(client, model, [
-    {
-      role: "user",
-      content: `You are a world-class visual designer. Generate a stunning, self-contained HTML/CSS design.${customInstructions}
+  const { result: message } = await callWithFallback(
+    client,
+    model,
+    [
+      {
+        role: "user",
+        content: `You are a world-class visual designer. Generate a stunning, self-contained HTML/CSS design.${customInstructions}
 
 Design request: "${prompt}"
 Style direction: ${style}
@@ -180,11 +226,13 @@ OUTPUT RULES:
 - Root element width must match the size hint
 - IMPORTANT: Keep CSS concise. No animations, no transitions, no keyframes.
 - CRITICAL: Generate exactly ONE design per response. Never include multiple designs, multiple ad variations, or multiple versions in one HTML file. The system handles variations externally — you only produce a single, complete design each time.`,
-    },
-  ], 8192, modelList);
+      },
+    ],
+    8192,
+    modelList,
+  );
 
-  const html =
-    message.content[0].type === "text" ? message.content[0].text : "";
+  const html = message.content[0].type === "text" ? message.content[0].text : "";
 
   const { html: cleaned, width, height } = parseHtmlWithSize(html);
 
@@ -205,9 +253,11 @@ async function generateSingle(
   styleVariation?: string,
   variationIndex?: number,
   systemPrompt?: string,
-  modelList?: string[]
+  modelList?: string[],
 ): Promise<{ html: string; label: string; width?: number; height?: number }> {
-  const customInstructions = systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n` : "";
+  const customInstructions = systemPrompt
+    ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n`
+    : "";
   const styleInstruction = styleVariation
     ? `\n\nStyle direction for THIS variation: ${styleVariation}\nMake this variation feel distinctly different from others while keeping the same concept and revision.`
     : "";
@@ -221,14 +271,18 @@ async function generateSingle(
   });
   const restoreImages = (output: string) => {
     let r = output;
-    for (let i = 0; i < imageStore.length; i++) r = r.replace(`[IMAGE_PLACEHOLDER_${i}]`, imageStore[i]);
+    for (let i = 0; i < imageStore.length; i++)
+      r = r.replace(`[IMAGE_PLACEHOLDER_${i}]`, imageStore[i]);
     return r;
   };
 
-  const { result: message } = await callWithFallback(client, model, [
-    {
-      role: "user",
-      content: `You are a world-class visual designer. You are EDITING an existing design — not creating a new one.${customInstructions}
+  const { result: message } = await callWithFallback(
+    client,
+    model,
+    [
+      {
+        role: "user",
+        content: `You are a world-class visual designer. You are EDITING an existing design — not creating a new one.${customInstructions}
 
 Here is the EXISTING HTML design:
 
@@ -258,11 +312,13 @@ OUTPUT FORMAT:
 - Include ALL CSS inline in a <style> tag
 - Self-contained, no external dependencies
 - Use the same dimensions as the original`,
-    },
-  ], 8192, modelList);
+      },
+    ],
+    8192,
+    modelList,
+  );
 
-  const html =
-    message.content[0].type === "text" ? message.content[0].text : "";
+  const html = message.content[0].type === "text" ? message.content[0].text : "";
 
   const parsed = parseHtmlWithSize(html);
   return {

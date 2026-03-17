@@ -4,16 +4,16 @@ This is the Otto monorepo managed with [Turborepo](https://turborepo.dev/).
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| [`@otto/types`](packages/types) | Shared TypeScript types |
-| [`@otto/core`](packages/core) | AI-agnostic core logic (prompts, parsers, processors) |
-| [`@otto/config`](packages/config) | Shared TypeScript config |
+| Package                           | Description                                           |
+| --------------------------------- | ----------------------------------------------------- |
+| [`@otto/types`](packages/types)   | Shared TypeScript types                               |
+| [`@otto/core`](packages/core)     | AI-agnostic core logic (prompts, parsers, processors) |
+| [`@otto/config`](packages/config) | Shared TypeScript config                              |
 
 ## Apps
 
-| App | Description |
-|-----|-------------|
+| App                          | Description                                       |
+| ---------------------------- | ------------------------------------------------- |
 | [`apps/canvas`](apps/canvas) | Otto Canvas — AI design tool with infinite canvas |
 
 ## Getting Started
@@ -83,10 +83,10 @@ For the multi-model pipeline (image generation + visual QA), also add your Gemin
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | No | Fallback API key for demo mode. Users can enter their own key in the UI. |
-| `NEXT_PUBLIC_GA_ID` | No | Google Analytics measurement ID. Only loads if set. |
+| Variable            | Required | Description                                                              |
+| ------------------- | -------- | ------------------------------------------------------------------------ |
+| `ANTHROPIC_API_KEY` | No       | Fallback API key for demo mode. Users can enter their own key in the UI. |
+| `NEXT_PUBLIC_GA_ID` | No       | Google Analytics measurement ID. Only loads if set.                      |
 
 ## Tech Stack
 
@@ -148,6 +148,7 @@ otto generate "A pricing card with 3 tiers"
 ```
 
 Options:
+
 - `-i, --iterations`: Number of iterations (default: 1)
 - `-s, --style`: Design style (default: default)
 

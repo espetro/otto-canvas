@@ -44,7 +44,9 @@ export function buildGeneratePrompt(params: {
   variationIndex?: number;
   systemPrompt?: string;
 }): string {
-  const customInstructions = params.systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${params.systemPrompt}\n` : "";
+  const customInstructions = params.systemPrompt
+    ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${params.systemPrompt}\n`
+    : "";
 
   return `You are a world-class visual designer. Generate a stunning, self-contained HTML/CSS design.${customInstructions}
 
@@ -110,7 +112,9 @@ export function buildRevisionPrompt(params: {
   variationIndex?: number;
   systemPrompt?: string;
 }): string {
-  const customInstructions = params.systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${params.systemPrompt}\n` : "";
+  const customInstructions = params.systemPrompt
+    ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${params.systemPrompt}\n`
+    : "";
   const styleInstruction = params.styleVariation
     ? `\n\nStyle direction for THIS variation: ${params.styleVariation}\nMake this variation feel distinctly different from others while keeping the same concept and revision.`
     : "";
@@ -154,8 +158,12 @@ export function buildLayoutPrompt(params: {
   availableSources: string[];
   systemPrompt?: string;
 }): string {
-  const critiqueBlock = params.critique ? `\n\nIMPROVEMENT FEEDBACK from previous variation (apply these learnings):\n${params.critique}\n` : "";
-  const customBlock = params.systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${params.systemPrompt}\n` : "";
+  const critiqueBlock = params.critique
+    ? `\n\nIMPROVEMENT FEEDBACK from previous variation (apply these learnings):\n${params.critique}\n`
+    : "";
+  const customBlock = params.systemPrompt
+    ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${params.systemPrompt}\n`
+    : "";
 
   return `You are a world-class visual designer. Generate a stunning, self-contained HTML/CSS design.${customBlock}${critiqueBlock}
 
@@ -177,11 +185,13 @@ REQUIRED ATTRIBUTES on every placeholder:
 - data-img-source = which image API to use: "unsplash", "dalle", or "gemini"
 - data-img-query = SHORT search keywords for Unsplash (3-5 words max)
 
-${params.availableSources && params.availableSources.length > 0
+${
+  params.availableSources && params.availableSources.length > 0
     ? `AVAILABLE IMAGE SOURCES (choose the best one for each placeholder):
 ${params.availableSources.includes("unsplash") ? '- "unsplash" — BEST for real photographs\n' : ""}${params.availableSources.includes("dalle") ? '- "dalle" — BEST for custom illustrations, abstract art\n' : ""}${params.availableSources.includes("gemini") ? '- "gemini" — BEST for design assets, UI elements\n' : ""}
 Choose the source that best matches what each placeholder needs.`
-    : 'Set data-img-source="gemini" for all placeholders (only source available).'}
+    : 'Set data-img-source="gemini" for all placeholders (only source available).'
+}
 
 Rules:
 - Include 1-6 placeholders per design
@@ -214,9 +224,13 @@ export function buildLayoutRevisionPrompt(params: {
   existingHtml: string;
   systemPrompt?: string;
 }): string {
-  const customBlock = params.systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${params.systemPrompt}\n` : "";
+  const customBlock = params.systemPrompt
+    ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${params.systemPrompt}\n`
+    : "";
 
-  return JSON.stringify({ stripped: params.existingHtml, restoreNeeded: true }) + "\n---PROMPT---\n" +
+  return (
+    JSON.stringify({ stripped: params.existingHtml, restoreNeeded: true }) +
+    "\n---PROMPT---\n" +
     `You are a world-class visual designer. You are EDITING an existing design — not creating a new one.${customBlock}
 
 Here is the EXISTING HTML design:
@@ -247,7 +261,8 @@ ABSOLUTELY NO MOTION — no CSS animations, transitions, @keyframes, hover effec
 SIZE — output a size comment on the FIRST line:
 <!--size:WIDTHxHEIGHT-->
 
-OUTPUT: HTML only — no explanation, no markdown, no code fences. ALL CSS in a <style> tag.`;
+OUTPUT: HTML only — no explanation, no markdown, no code fences. ALL CSS in a <style> tag.`
+  );
 }
 
 export function buildReviewPrompt(params: {
@@ -285,10 +300,7 @@ RULES:
 - Self-contained, no external dependencies`;
 }
 
-export function buildCritiquePrompt(params: {
-  html: string;
-  prompt: string;
-}): string {
+export function buildCritiquePrompt(params: { html: string; prompt: string }): string {
   return `You are a design critic. Analyze this HTML/CSS design and provide specific, actionable feedback for improving the NEXT variation.
 
 Original request: "${params.prompt}"
@@ -304,9 +316,7 @@ Provide 3-5 bullet points of specific improvements. Focus on:
 Be specific and concise. This feedback will be injected into the next generation prompt.`;
 }
 
-export function buildPlanPrompt(params: {
-  prompt: string;
-}): string {
+export function buildPlanPrompt(params: { prompt: string }): string {
   return `You are a creative director planning VISUAL STYLE variations for a design. Given this design request, decide how many distinct visual directions to create (between 2 and 6) and describe each one.
 
 Design request: "${params.prompt}"

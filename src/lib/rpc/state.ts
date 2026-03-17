@@ -1,17 +1,32 @@
-import type { GenerateRequest, GenerateResponse, RefineRequest, RefineResponse, ListRequest, ListResponse, SelectRequest, SelectResponse, Design } from '@/gen/proto/canvas';
+// Type definitions for RPC commands and responses
+type GenerateRequest = { prompt: string };
+type GenerateResponse = { designId: string; status: string; designs: Design[] };
+type RefineRequest = { designId: string; feedback: string };
+type RefineResponse = { designId: string; status: string };
+type ListRequest = Record<string, never>;
+type ListResponse = { designs: Design[] };
+type SelectRequest = { designId: string };
+type SelectResponse = { success: boolean };
+
+interface Design {
+  id: string;
+  prompt: string;
+  htmlContent: string;
+  createdAt: number;
+}
 
 type RPCCommand =
-  | { type: 'generate'; payload: GenerateRequest }
-  | { type: 'refine'; payload: RefineRequest }
-  | { type: 'list'; payload: ListRequest }
-  | { type: 'select'; payload: SelectRequest };
+  | { type: "generate"; payload: GenerateRequest }
+  | { type: "refine"; payload: RefineRequest }
+  | { type: "list"; payload: ListRequest }
+  | { type: "select"; payload: SelectRequest };
 
 type RPCResult =
-  | { type: 'generate'; payload: GenerateResponse }
-  | { type: 'refine'; payload: RefineResponse }
-  | { type: 'list'; payload: ListResponse }
-  | { type: 'select'; payload: SelectResponse }
-  | { type: 'error'; payload: { message: string } };
+  | { type: "generate"; payload: GenerateResponse }
+  | { type: "refine"; payload: RefineResponse }
+  | { type: "list"; payload: ListResponse }
+  | { type: "select"; payload: SelectResponse }
+  | { type: "error"; payload: { message: string } };
 
 interface PendingCommand {
   id: string;
@@ -84,7 +99,7 @@ class RPCState {
       setTimeout(() => {
         if (this.pendingCommands.has(id)) {
           this.pendingCommands.delete(id);
-          reject(new Error('Command timeout - browser did not respond in time'));
+          reject(new Error("Command timeout - browser did not respond in time"));
         }
       }, 30000);
     });
@@ -101,10 +116,10 @@ class RPCState {
   async executeCommand(command: RPCCommand): Promise<RPCResult> {
     try {
       switch (command.type) {
-        case 'generate': {
+        case "generate": {
           if (this.callbacks.onGenerate) {
             const payload = await this.callbacks.onGenerate(command.payload);
-            return { type: 'generate', payload };
+            return { type: "generate", payload };
           }
           const designId = `design_${++this.designCounter}`;
           const design: Design = {
@@ -115,51 +130,54 @@ class RPCState {
           };
           this.designs.set(designId, design);
           return {
-            type: 'generate',
-            payload: { designId, status: 'completed', designs: [design] },
+            type: "generate",
+            payload: { designId, status: "completed", designs: [design] },
           };
         }
-        case 'refine': {
+        case "refine": {
           if (this.callbacks.onRefine) {
             const payload = await this.callbacks.onRefine(command.payload);
-            return { type: 'refine', payload };
+            return { type: "refine", payload };
           }
           const design = this.designs.get(command.payload.designId);
           if (!design) {
-            return { type: 'error', payload: { message: `Design not found: ${command.payload.designId}` } };
+            return {
+              type: "error",
+              payload: { message: `Design not found: ${command.payload.designId}` },
+            };
           }
           design.htmlContent += `<!-- Refined with: ${command.payload.feedback} -->`;
           return {
-            type: 'refine',
-            payload: { designId: command.payload.designId, status: 'completed' },
+            type: "refine",
+            payload: { designId: command.payload.designId, status: "completed" },
           };
         }
-        case 'list': {
+        case "list": {
           if (this.callbacks.onList) {
             const payload = await this.callbacks.onList(command.payload);
-            return { type: 'list', payload };
+            return { type: "list", payload };
           }
           return {
-            type: 'list',
+            type: "list",
             payload: { designs: Array.from(this.designs.values()) },
           };
         }
-        case 'select': {
+        case "select": {
           if (this.callbacks.onSelect) {
             const payload = await this.callbacks.onSelect(command.payload);
-            return { type: 'select', payload };
+            return { type: "select", payload };
           }
           const design = this.designs.get(command.payload.designId);
           return {
-            type: 'select',
+            type: "select",
             payload: { success: !!design },
           };
         }
       }
     } catch (error) {
       return {
-        type: 'error',
-        payload: { message: error instanceof Error ? error.message : 'Unknown error' },
+        type: "error",
+        payload: { message: error instanceof Error ? error.message : "Unknown error" },
       };
     }
   }
@@ -178,4 +196,4 @@ class RPCState {
 }
 
 export const rpcState = RPCState.getInstance();
-export type { RPCCommand, RPCResult, BrowserCallbacks };
+export type { RPCCommand, RPCResult, BrowserCallbacks, Design };

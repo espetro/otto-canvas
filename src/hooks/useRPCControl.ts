@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { createRPCClient } from '@shared/lib/rpc/server';
-import type { CanvasServiceClient } from '@shared/gen/proto/canvas';
+import { useEffect, useState } from "react";
+import { createRPCClient } from "@shared/lib/rpc/server";
+import type { CanvasServiceClient } from "@shared/gen/proto/canvas";
 
 export interface UseRPCControlOptions {
   onGenerate?: (prompt: string) => void;

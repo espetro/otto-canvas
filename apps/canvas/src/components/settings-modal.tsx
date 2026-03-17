@@ -268,13 +268,21 @@ interface SettingsModalProps {
   cachedModels: ModelInfo[];
   modelsFetchError?: boolean;
 }
-export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, availableModels, isProbing, cachedModels, modelsFetchError }: SettingsModalProps) {
+export function SettingsModal({
+  settings,
+  onUpdate,
+  onClose,
+  isOwnKey,
+  availableModels,
+  isProbing,
+  cachedModels,
+  modelsFetchError,
+}: SettingsModalProps) {
   const [key, setKey] = useState(settings.apiKey);
   const [geminiKey, setGeminiKey] = useState(settings.geminiKey);
   const [unsplashKey, setUnsplashKey] = useState(settings.unsplashKey);
   const [openaiKey, setOpenaiKey] = useState(settings.openaiKey);
   const [anthropicApiUrl, setAnthropicApiUrl] = useState(settings.anthropicApiUrl);
-
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -312,7 +320,14 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-black/5 transition-all"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -358,7 +373,8 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               </button>
             )}
             <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">
-              Your key is stored in localStorage. It passes through our server to reach your AI provider but is never logged or persisted.
+              Your key is stored in localStorage. It passes through our server to reach your AI
+              provider but is never logged or persisted.
             </p>
           </div>
 
@@ -388,7 +404,10 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
             </div>
             {settings.anthropicApiUrl && (
               <button
-                onClick={() => { setAnthropicApiUrl(""); onUpdate({ anthropicApiUrl: "" }); }}
+                onClick={() => {
+                  setAnthropicApiUrl("");
+                  onUpdate({ anthropicApiUrl: "" });
+                }}
                 className="mt-2 text-[11px] text-gray-500 hover:text-red-500 transition-colors"
               >
                 Remove URL
@@ -399,7 +418,6 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
             </p>
           </div>
 
-
           {/* Model Selector */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -409,7 +427,16 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               {isProbing && (
                 <span className="flex items-center gap-1.5 text-[11px] text-blue-500 font-medium">
                   <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" strokeLinecap="round" />
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="60"
+                      strokeDashoffset="20"
+                      strokeLinecap="round"
+                    />
                   </svg>
                   Checking models...
                 </span>
@@ -422,7 +449,9 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
             )}
             {cachedModels.length === 0 && !isProbing ? (
               <p className="text-[11px] text-gray-400 py-1">
-                {isOwnKey ? "Connecting to your API…" : "Add your API key above to see available models."}
+                {isOwnKey
+                  ? "Connecting to your API…"
+                  : "Add your API key above to see available models."}
               </p>
             ) : (
               <div className="space-y-1">
@@ -439,8 +468,8 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
                         !available
                           ? "opacity-35 cursor-not-allowed bg-gray-100/30 border border-transparent"
                           : isSelected
-                          ? "bg-blue-500/10 border border-blue-300/40 text-gray-800"
-                          : "bg-white/40 border border-transparent hover:bg-white/60 text-gray-600"
+                            ? "bg-blue-500/10 border border-blue-300/40 text-gray-800"
+                            : "bg-white/40 border border-transparent hover:bg-white/60 text-gray-600"
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -455,7 +484,15 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
                         )}
                       </div>
                       {isSelected && available && (
-                        <svg className="w-4 h-4 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          className="w-4 h-4 text-blue-500 shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       )}
@@ -466,7 +503,8 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
             )}
             {isOwnKey && availableModels && cachedModels.length > 0 && (
               <p className="mt-2 text-[10px] text-gray-500">
-                {Object.values(availableModels).filter(Boolean).length} of {cachedModels.length} models available on your key
+                {Object.values(availableModels).filter(Boolean).length} of {cachedModels.length}{" "}
+                models available on your key
               </p>
             )}
           </div>
@@ -479,12 +517,20 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               </label>
               {(settings.unsplashKey || settings.openaiKey || settings.geminiKey) && (
                 <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50/80 px-2 py-0.5 rounded-full">
-                  {[settings.unsplashKey && "Unsplash", settings.openaiKey && "DALL·E", settings.geminiKey && "Gemini"].filter(Boolean).join(" · ")}
+                  {[
+                    settings.unsplashKey && "Unsplash",
+                    settings.openaiKey && "DALL·E",
+                    settings.geminiKey && "Gemini",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
               )}
             </div>
             <p className="text-[11px] text-gray-500 mb-4 leading-relaxed">
-              Add API keys to enable real images in your designs. Your AI model automatically picks the best source for each image — photos from Unsplash, illustrations from DALL·E, design assets from Gemini.
+              Add API keys to enable real images in your designs. Your AI model automatically picks
+              the best source for each image — photos from Unsplash, illustrations from DALL·E,
+              design assets from Gemini.
             </p>
 
             <div className="space-y-3">
@@ -498,7 +544,10 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
                 savedValue={settings.geminiKey}
                 onChange={setGeminiKey}
                 onSave={() => onUpdate({ geminiKey: geminiKey.trim() })}
-                onRemove={() => { setGeminiKey(""); onUpdate({ geminiKey: "" }); }}
+                onRemove={() => {
+                  setGeminiKey("");
+                  onUpdate({ geminiKey: "" });
+                }}
                 linkUrl="https://aistudio.google.com/apikey"
                 linkLabel="aistudio.google.com"
               />
@@ -513,7 +562,10 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
                 savedValue={settings.openaiKey}
                 onChange={setOpenaiKey}
                 onSave={() => onUpdate({ openaiKey: openaiKey.trim() })}
-                onRemove={() => { setOpenaiKey(""); onUpdate({ openaiKey: "" }); }}
+                onRemove={() => {
+                  setOpenaiKey("");
+                  onUpdate({ openaiKey: "" });
+                }}
                 linkUrl="https://platform.openai.com/api-keys"
                 linkLabel="platform.openai.com"
               />
@@ -528,7 +580,10 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
                 savedValue={settings.unsplashKey}
                 onChange={setUnsplashKey}
                 onSave={() => onUpdate({ unsplashKey: unsplashKey.trim() })}
-                onRemove={() => { setUnsplashKey(""); onUpdate({ unsplashKey: "" }); }}
+                onRemove={() => {
+                  setUnsplashKey("");
+                  onUpdate({ unsplashKey: "" });
+                }}
                 linkUrl="https://unsplash.com/developers"
                 linkLabel="unsplash.com/developers"
               />
@@ -540,112 +595,120 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
         <div className="px-6 pb-6">
           <div className="border border-amber-200/50 bg-amber-50/30 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">🧪 Experimental</span>
+              <span className="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">
+                🧪 Experimental
+              </span>
             </div>
-              {/* Generation mode */}
-              <div className="mb-4">
-                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Generation Mode
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => onUpdate({ quickMode: false })}
-                    className={`text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all ${
-                      !settings.quickMode
-                        ? "bg-amber-500/90 text-white"
-                        : "bg-white/50 text-gray-600 hover:bg-white/80"
-                    }`}
-                  >
-                    🔄 Critique Loop
-                  </button>
-                  <button
-                    onClick={() => onUpdate({ quickMode: true })}
-                    className={`text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all ${
-                      settings.quickMode
-                        ? "bg-amber-500/90 text-white"
-                        : "bg-white/50 text-gray-600 hover:bg-white/80"
-                    }`}
-                  >
-                    ⚡ Quick Mode
-                  </button>
-                </div>
-                <p className="mt-1.5 text-[10px] text-gray-500">
-                  Critique Loop: sequential generation with feedback between frames. Quick Mode: parallel, no critique.
-                </p>
-              </div>
-
-              {/* Concept count */}
-              <div className="mb-4">
-                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Concepts per generation
-                </label>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => onUpdate({ conceptCount: n })}
-                      className={`w-9 h-8 rounded-lg text-[12px] font-medium transition-all ${
-                        settings.conceptCount === n
-                          ? "bg-amber-500/90 text-white"
-                          : "bg-white/50 text-gray-500 hover:bg-white/80"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-1.5 text-[10px] text-gray-500">
-                  How many design variations to generate per prompt.
-                </p>
-              </div>
-
-              {/* System prompt preset */}
-              <div className="mb-4">
-                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Designer Preset
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {SYSTEM_PROMPT_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      onClick={() => {
-                        onUpdate({
-                          systemPromptPreset: preset.id,
-                          systemPrompt: preset.id === "custom" ? "" : preset.prompt,
-                        });
-                      }}
-                      className={`text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all ${
-                        settings.systemPromptPreset === preset.id
-                          ? "bg-amber-500/90 text-white"
-                          : "bg-white/50 text-gray-600 hover:bg-white/80"
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
+            {/* Generation mode */}
+            <div className="mb-4">
               <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                System Prompt
+                Generation Mode
               </label>
-              <textarea
-                value={settings.systemPrompt}
-                onChange={(e) => onUpdate({ systemPrompt: e.target.value, systemPromptPreset: "custom" })}
-                placeholder="Add custom instructions for the AI designer...&#10;&#10;e.g. &quot;You are a Facebook ad designer. Use 1200x628, minimal text, strong visual hierarchy...&quot;"
-                className="w-full h-32 px-4 py-3 rounded-xl bg-white/70 border border-gray-200/50 text-[13px] text-gray-700 placeholder-gray-400 outline-none focus:border-blue-300/50 focus:ring-1 focus:ring-blue-200/30 resize-y font-mono"
-              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onUpdate({ quickMode: false })}
+                  className={`text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all ${
+                    !settings.quickMode
+                      ? "bg-amber-500/90 text-white"
+                      : "bg-white/50 text-gray-600 hover:bg-white/80"
+                  }`}
+                >
+                  🔄 Critique Loop
+                </button>
+                <button
+                  onClick={() => onUpdate({ quickMode: true })}
+                  className={`text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all ${
+                    settings.quickMode
+                      ? "bg-amber-500/90 text-white"
+                      : "bg-white/50 text-gray-600 hover:bg-white/80"
+                  }`}
+                >
+                  ⚡ Quick Mode
+                </button>
+              </div>
               <p className="mt-1.5 text-[10px] text-gray-500">
-                Prepended to every generation. Use for brand guidelines, design skills, or style overrides.
+                Critique Loop: sequential generation with feedback between frames. Quick Mode:
+                parallel, no critique.
               </p>
+            </div>
+
+            {/* Concept count */}
+            <div className="mb-4">
+              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Concepts per generation
+              </label>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => onUpdate({ conceptCount: n })}
+                    className={`w-9 h-8 rounded-lg text-[12px] font-medium transition-all ${
+                      settings.conceptCount === n
+                        ? "bg-amber-500/90 text-white"
+                        : "bg-white/50 text-gray-500 hover:bg-white/80"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[10px] text-gray-500">
+                How many design variations to generate per prompt.
+              </p>
+            </div>
+
+            {/* System prompt preset */}
+            <div className="mb-4">
+              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Designer Preset
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {SYSTEM_PROMPT_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => {
+                      onUpdate({
+                        systemPromptPreset: preset.id,
+                        systemPrompt: preset.id === "custom" ? "" : preset.prompt,
+                      });
+                    }}
+                    className={`text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all ${
+                      settings.systemPromptPreset === preset.id
+                        ? "bg-amber-500/90 text-white"
+                        : "bg-white/50 text-gray-600 hover:bg-white/80"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              System Prompt
+            </label>
+            <textarea
+              value={settings.systemPrompt}
+              onChange={(e) =>
+                onUpdate({ systemPrompt: e.target.value, systemPromptPreset: "custom" })
+              }
+              placeholder='Add custom instructions for the AI designer...&#10;&#10;e.g. "You are a Facebook ad designer. Use 1200x628, minimal text, strong visual hierarchy..."'
+              className="w-full h-32 px-4 py-3 rounded-xl bg-white/70 border border-gray-200/50 text-[13px] text-gray-700 placeholder-gray-400 outline-none focus:border-blue-300/50 focus:ring-1 focus:ring-blue-200/30 resize-y font-mono"
+            />
+            <p className="mt-1.5 text-[10px] text-gray-500">
+              Prepended to every generation. Use for brand guidelines, design skills, or style
+              overrides.
+            </p>
           </div>
         </div>
 
         {/* Footer */}
         <div className="p-6 border-t border-gray-200/30 flex items-center justify-between">
           <span className="text-[11px] text-gray-500">
-            {isOwnKey ? "🔑 Own key" : "🌐 Demo key"} · {cachedModels.find((m) => m.id === settings.model)?.displayName || settings.model}
-            {(settings.unsplashKey || settings.openaiKey || settings.geminiKey) && ` · 🖼️ ${[settings.unsplashKey && "Unsplash", settings.openaiKey && "DALL·E", settings.geminiKey && "Gemini"].filter(Boolean).join(", ")}`}
+            {isOwnKey ? "🔑 Own key" : "🌐 Demo key"} ·{" "}
+            {cachedModels.find((m) => m.id === settings.model)?.displayName || settings.model}
+            {(settings.unsplashKey || settings.openaiKey || settings.geminiKey) &&
+              ` · 🖼️ ${[settings.unsplashKey && "Unsplash", settings.openaiKey && "DALL·E", settings.geminiKey && "Gemini"].filter(Boolean).join(", ")}`}
           </span>
           <button
             onClick={() => {
@@ -653,9 +716,11 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
               const updates: Partial<Settings> = {};
               if (key.trim() !== settings.apiKey) updates.apiKey = key.trim();
               if (geminiKey.trim() !== settings.geminiKey) updates.geminiKey = geminiKey.trim();
-              if (unsplashKey.trim() !== settings.unsplashKey) updates.unsplashKey = unsplashKey.trim();
+              if (unsplashKey.trim() !== settings.unsplashKey)
+                updates.unsplashKey = unsplashKey.trim();
               if (openaiKey.trim() !== settings.openaiKey) updates.openaiKey = openaiKey.trim();
-              if (anthropicApiUrl.trim() !== settings.anthropicApiUrl) updates.anthropicApiUrl = anthropicApiUrl.trim();
+              if (anthropicApiUrl.trim() !== settings.anthropicApiUrl)
+                updates.anthropicApiUrl = anthropicApiUrl.trim();
               if (Object.keys(updates).length) onUpdate(updates);
               onClose();
             }}
@@ -670,12 +735,29 @@ export function SettingsModal({ settings, onUpdate, onClose, isOwnKey, available
 }
 
 function ImageKeyField({
-  label, icon, desc, placeholder, value, savedValue, onChange, onSave, onRemove, linkUrl, linkLabel,
+  label,
+  icon,
+  desc,
+  placeholder,
+  value,
+  savedValue,
+  onChange,
+  onSave,
+  onRemove,
+  linkUrl,
+  linkLabel,
 }: {
-  label: string; icon: string; desc: string; placeholder: string;
-  value: string; savedValue: string;
-  onChange: (v: string) => void; onSave: () => void; onRemove: () => void;
-  linkUrl: string; linkLabel: string;
+  label: string;
+  icon: string;
+  desc: string;
+  placeholder: string;
+  value: string;
+  savedValue: string;
+  onChange: (v: string) => void;
+  onSave: () => void;
+  onRemove: () => void;
+  linkUrl: string;
+  linkLabel: string;
 }) {
   const isSaved = !!savedValue;
   const isChanged = value.trim() !== savedValue;
@@ -686,11 +768,14 @@ function ImageKeyField({
         <div className="flex items-center gap-1.5">
           <span className="text-sm">{icon}</span>
           <span className="text-[12px] font-semibold text-gray-700">{label}</span>
-          {isSaved && (
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          )}
+          {isSaved && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
         </div>
-        <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline">
+        <a
+          href={linkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] text-blue-500 hover:underline"
+        >
           {linkLabel} →
         </a>
       </div>
@@ -704,13 +789,19 @@ function ImageKeyField({
           className="flex-1 text-[12px] text-gray-800 placeholder-gray-300 bg-white/60 rounded-lg px-3 py-2 outline-none border border-gray-200/40 focus:border-blue-300/50 transition-all font-mono"
         />
         {isChanged && value.trim() && (
-          <button onClick={onSave} className="text-[11px] font-medium text-white bg-blue-500/90 hover:bg-blue-500 px-3 py-1.5 rounded-lg transition-all shrink-0">
+          <button
+            onClick={onSave}
+            className="text-[11px] font-medium text-white bg-blue-500/90 hover:bg-blue-500 px-3 py-1.5 rounded-lg transition-all shrink-0"
+          >
             Save
           </button>
         )}
       </div>
       {isSaved && (
-        <button onClick={onRemove} className="mt-1.5 text-[10px] text-gray-400 hover:text-red-500 transition-colors">
+        <button
+          onClick={onRemove}
+          className="mt-1.5 text-[10px] text-gray-400 hover:text-red-500 transition-colors"
+        >
           Remove key
         </button>
       )}

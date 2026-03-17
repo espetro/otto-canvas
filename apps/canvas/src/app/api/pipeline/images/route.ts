@@ -33,14 +33,21 @@ async function generateUnsplashImage(ph: Placeholder, unsplashKey: string): Prom
 }
 
 async function generateDalleImage(ph: Placeholder, openaiKey: string): Promise<string | null> {
-  const size = ph.width > ph.height * 1.3 ? "1792x1024" : ph.height > ph.width * 1.3 ? "1024x1792" : "1024x1024";
+  const size =
+    ph.width > ph.height * 1.3
+      ? "1792x1024"
+      : ph.height > ph.width * 1.3
+        ? "1024x1792"
+        : "1024x1024";
   const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
     body: JSON.stringify({
       model: "dall-e-3",
       prompt: `${ph.description}. Clean, professional design asset suitable for web/marketing. No text unless specifically requested.`,
-      n: 1, size, response_format: "b64_json",
+      n: 1,
+      size,
+      response_format: "b64_json",
     }),
   });
   if (!res.ok) return null;
@@ -86,10 +93,15 @@ export async function POST(req: NextRequest) {
     }
 
     const placeholders: Placeholder[] = [];
-    const regex = /data-placeholder="([^"]+)"\s+data-ph-w="(\d+)"\s+data-ph-h="(\d+)"(?:\s+data-img-source="([^"]*)")?(?:\s+data-img-query="([^"]*)")?/g;
+    const regex =
+      /data-placeholder="([^"]+)"\s+data-ph-w="(\d+)"\s+data-ph-h="(\d+)"(?:\s+data-img-source="([^"]*)")?(?:\s+data-img-query="([^"]*)")?/g;
     let match;
     let idx = 0;
-    const defaultSource: ImageSource = availableSources.includes("unsplash") ? "unsplash" : availableSources.includes("dalle") ? "dalle" : "gemini";
+    const defaultSource: ImageSource = availableSources.includes("unsplash")
+      ? "unsplash"
+      : availableSources.includes("dalle")
+        ? "dalle"
+        : "gemini";
     while ((match = regex.exec(html)) !== null) {
       let source = (match[4] || defaultSource) as ImageSource;
       if (!availableSources.includes(source)) source = defaultSource;
@@ -104,7 +116,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (placeholders.length === 0) {
-      return NextResponse.json({ html, imageCount: 0, skipped: true, reason: "No placeholders found" });
+      return NextResponse.json({
+        html,
+        imageCount: 0,
+        skipped: true,
+        reason: "No placeholders found",
+      });
     }
 
     // Generate images
@@ -120,27 +137,40 @@ export async function POST(req: NextRequest) {
       await Promise.allSettled(
         batch.map(async (ph, batchIdx) => {
           const globalIdx = i + batchIdx;
-          const sources = [ph.source, ...fallbackChain.filter(s => s !== ph.source)];
+          const sources = [ph.source, ...fallbackChain.filter((s) => s !== ph.source)];
           for (const source of sources) {
             try {
               let result: string | null = null;
               switch (source) {
-                case "unsplash": if (unsplashKey) result = await generateUnsplashImage(ph, unsplashKey); break;
-                case "dalle": if (openaiKey) result = await generateDalleImage(ph, openaiKey); break;
-                case "gemini": if (geminiKey) result = await generateGeminiImage(ph, geminiKey); break;
+                case "unsplash":
+                  if (unsplashKey) result = await generateUnsplashImage(ph, unsplashKey);
+                  break;
+                case "dalle":
+                  if (openaiKey) result = await generateDalleImage(ph, openaiKey);
+                  break;
+                case "gemini":
+                  if (geminiKey) result = await generateGeminiImage(ph, geminiKey);
+                  break;
               }
-              if (result) { imageMap.set(globalIdx, result); return; }
+              if (result) {
+                imageMap.set(globalIdx, result);
+                return;
+              }
             } catch (err) {
-              console.error(`Image ${globalIdx} ${source} failed:`, err instanceof Error ? err.message : err);
+              console.error(
+                `Image ${globalIdx} ${source} failed:`,
+                err instanceof Error ? err.message : err,
+              );
             }
           }
-        })
+        }),
       );
     }
 
     // Composite images into HTML
     let result = html;
-    const replaceRegex = /<div\s+data-placeholder="[^"]*"\s+data-ph-w="\d+"\s+data-ph-h="\d+"[^>]*>[\s\S]*?<\/div>/g;
+    const replaceRegex =
+      /<div\s+data-placeholder="[^"]*"\s+data-ph-w="\d+"\s+data-ph-h="\d+"[^>]*>[\s\S]*?<\/div>/g;
     let replaceIdx = 0;
     result = result.replace(replaceRegex, (matchStr: string) => {
       const dataUrl = imageMap.get(replaceIdx);

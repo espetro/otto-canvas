@@ -1,4 +1,9 @@
-export function parseHtmlWithSize(raw: string): { html: string; width?: number; height?: number; comment?: string } {
+export function parseHtmlWithSize(raw: string): {
+  html: string;
+  width?: number;
+  height?: number;
+  comment?: string;
+} {
   let cleaned = raw.trim();
   if (cleaned.startsWith("```")) {
     cleaned = cleaned.replace(/^```(?:html)?\n?/, "").replace(/\n?```$/, "");
@@ -23,7 +28,9 @@ export function parseHtmlWithSize(raw: string): { html: string; width?: number; 
     cleaned = cleaned.replace(/<!--otto:.*?-->\n?/, "").trim();
   }
 
-  const htmlStart = cleaned.match(/^[\s\S]*?(<(?:!DOCTYPE|html|head|style|div|section|main|body|meta|link)[>\s])/i);
+  const htmlStart = cleaned.match(
+    /^[\s\S]*?(<(?:!DOCTYPE|html|head|style|div|section|main|body|meta|link)[>\s])/i,
+  );
   if (htmlStart && htmlStart.index !== undefined && htmlStart.index > 0) {
     cleaned = cleaned.substring(htmlStart.index);
   }

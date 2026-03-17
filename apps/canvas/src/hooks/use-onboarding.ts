@@ -31,7 +31,9 @@ export function useOnboarding() {
   const update = useCallback((patch: Partial<OnboardingState>) => {
     setState((prev) => {
       const next = { ...prev, ...patch };
-      try { localStorage.setItem(ONBOARDING_KEY, JSON.stringify(next)); } catch {}
+      try {
+        localStorage.setItem(ONBOARDING_KEY, JSON.stringify(next));
+      } catch {}
       return next;
     });
   }, []);

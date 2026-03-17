@@ -1,1 +1,1 @@
-export { canvasServiceImpl } from './handlers';
+export { canvasServiceImpl } from "./handlers";

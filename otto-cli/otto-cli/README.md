@@ -1,20 +1,21 @@
-otto-cli
-=================
+# otto-cli
 
 A new CLI generated with oclif
-
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/otto-cli.svg)](https://npmjs.org/package/otto-cli)
 [![Downloads/week](https://img.shields.io/npm/dw/otto-cli.svg)](https://npmjs.org/package/otto-cli)
 
-
 <!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
+
+- [Usage](#usage)
+- [Commands](#commands)
 <!-- tocstop -->
+
 # Usage
+
 <!-- usage -->
+
 ```sh-session
 $ npm install -g otto-cli
 $ otto-cli COMMAND
@@ -26,22 +27,26 @@ USAGE
   $ otto-cli COMMAND
 ...
 ```
+
 <!-- usagestop -->
+
 # Commands
+
 <!-- commands -->
-* [`otto-cli hello PERSON`](#otto-cli-hello-person)
-* [`otto-cli hello world`](#otto-cli-hello-world)
-* [`otto-cli help [COMMAND]`](#otto-cli-help-command)
-* [`otto-cli plugins`](#otto-cli-plugins)
-* [`otto-cli plugins add PLUGIN`](#otto-cli-plugins-add-plugin)
-* [`otto-cli plugins:inspect PLUGIN...`](#otto-cli-pluginsinspect-plugin)
-* [`otto-cli plugins install PLUGIN`](#otto-cli-plugins-install-plugin)
-* [`otto-cli plugins link PATH`](#otto-cli-plugins-link-path)
-* [`otto-cli plugins remove [PLUGIN]`](#otto-cli-plugins-remove-plugin)
-* [`otto-cli plugins reset`](#otto-cli-plugins-reset)
-* [`otto-cli plugins uninstall [PLUGIN]`](#otto-cli-plugins-uninstall-plugin)
-* [`otto-cli plugins unlink [PLUGIN]`](#otto-cli-plugins-unlink-plugin)
-* [`otto-cli plugins update`](#otto-cli-plugins-update)
+
+- [`otto-cli hello PERSON`](#otto-cli-hello-person)
+- [`otto-cli hello world`](#otto-cli-hello-world)
+- [`otto-cli help [COMMAND]`](#otto-cli-help-command)
+- [`otto-cli plugins`](#otto-cli-plugins)
+- [`otto-cli plugins add PLUGIN`](#otto-cli-plugins-add-plugin)
+- [`otto-cli plugins:inspect PLUGIN...`](#otto-cli-pluginsinspect-plugin)
+- [`otto-cli plugins install PLUGIN`](#otto-cli-plugins-install-plugin)
+- [`otto-cli plugins link PATH`](#otto-cli-plugins-link-path)
+- [`otto-cli plugins remove [PLUGIN]`](#otto-cli-plugins-remove-plugin)
+- [`otto-cli plugins reset`](#otto-cli-plugins-reset)
+- [`otto-cli plugins uninstall [PLUGIN]`](#otto-cli-plugins-uninstall-plugin)
+- [`otto-cli plugins unlink [PLUGIN]`](#otto-cli-plugins-unlink-plugin)
+- [`otto-cli plugins update`](#otto-cli-plugins-update)
 
 ## `otto-cli hello PERSON`
 
@@ -394,4 +399,5 @@ DESCRIPTION
 ```
 
 _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/5.4.58/src/commands/plugins/update.ts)_
+
 <!-- commandsstop -->

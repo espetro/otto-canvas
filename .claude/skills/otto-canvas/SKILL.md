@@ -29,6 +29,7 @@ otto generate "A pricing card with 3 tiers"
 ```
 
 Options:
+
 - `-i, --iterations`: Number of iterations (default: 1)
 - `-s, --style`: Design style (default: default)
 
@@ -59,11 +60,13 @@ otto refine <design-id> "Make the colors more vibrant"
 ## Example Workflow
 
 1. Generate a design:
+
    ```bash
    otto generate "A dark mode login form"
    ```
 
 2. List to see the design ID:
+
    ```bash
    otto list
    ```

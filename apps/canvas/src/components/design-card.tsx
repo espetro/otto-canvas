@@ -28,11 +28,26 @@ interface DesignCardProps {
 }
 
 const REMIX_PRESETS = [
-  { label: "🎨 Different colors", prompt: "Same layout and content, but try 4 completely different color palettes" },
-  { label: "📐 Different layouts", prompt: "Same content and message, but try 4 completely different layouts and compositions" },
-  { label: "🔤 Different typography", prompt: "Same layout and colors, but try 4 different typography styles and font pairings" },
-  { label: "✨ More minimal", prompt: "Same concept but much more minimal — fewer elements, more whitespace, simpler" },
-  { label: "🔥 More bold", prompt: "Same concept but much bolder — bigger type, stronger colors, more visual impact" },
+  {
+    label: "🎨 Different colors",
+    prompt: "Same layout and content, but try 4 completely different color palettes",
+  },
+  {
+    label: "📐 Different layouts",
+    prompt: "Same content and message, but try 4 completely different layouts and compositions",
+  },
+  {
+    label: "🔤 Different typography",
+    prompt: "Same layout and colors, but try 4 different typography styles and font pairings",
+  },
+  {
+    label: "✨ More minimal",
+    prompt: "Same concept but much more minimal — fewer elements, more whitespace, simpler",
+  },
+  {
+    label: "🔥 More bold",
+    prompt: "Same concept but much bolder — bigger type, stronger colors, more visual impact",
+  },
 ];
 
 export function DesignCard({
@@ -58,8 +73,9 @@ export function DesignCard({
 
   // Build srcdoc — wrap content in a measuring div to get exact height
   const frameW = iteration.width || FRAME_WIDTH;
-  const srcdoc = iteration.html && !iteration.isLoading
-    ? `<!DOCTYPE html>
+  const srcdoc =
+    iteration.html && !iteration.isLoading
+      ? `<!DOCTYPE html>
 <html style="height:auto;overflow:hidden;"><head><meta charset="utf-8"><style>
   html, body { margin: 0; padding: 0; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: hidden; }
   body { background: white; width: ${frameW}px; }
@@ -82,7 +98,7 @@ setTimeout(reportHeight, 200);
 setTimeout(reportHeight, 600);
 setTimeout(reportHeight, 1500);
 </script></body></html>`
-    : undefined;
+      : undefined;
 
   // Listen for height messages from sandboxed iframe
   useEffect(() => {
@@ -95,14 +111,14 @@ setTimeout(reportHeight, 1500);
     }
 
     const onMessage = (e: MessageEvent) => {
-      if (e.data?.type === 'otto-frame-height' && e.data.id === iteration.id) {
+      if (e.data?.type === "otto-frame-height" && e.data.id === iteration.id) {
         const h = Math.min(Math.max(e.data.height, 50), 12000);
         setContentHeight(h);
         measuredRef.current = true;
       }
     };
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
   }, [iteration.html, iteration.isLoading, iteration.id, iteration.height]);
 
   const handleClick = (e: React.MouseEvent) => {
@@ -139,7 +155,13 @@ setTimeout(reportHeight, 1500);
         {!iteration.isLoading && iteration.html && (
           <div className="ml-auto flex items-center gap-1 opacity-0 group-hover/label:opacity-100 transition-opacity">
             <RemixButton iteration={iteration} onRemix={onRemix} />
-            <ExportMenu html={iteration.html} label={iteration.label} width={iteration.width} apiKey={apiKey} model={model} />
+            <ExportMenu
+              html={iteration.html}
+              label={iteration.label}
+              width={iteration.width}
+              apiKey={apiKey}
+              model={model}
+            />
           </div>
         )}
       </div>
@@ -147,18 +169,29 @@ setTimeout(reportHeight, 1500);
       {/* Frame — fixed width, NO transitions on any dimension */}
       <div
         ref={wrapperRef}
-        onClick={(e) => { handleClick(e); if (isSelectMode && onSelect) { e.stopPropagation(); onSelect(e); } }}
-        onMouseDown={(e) => { if (isSelectMode) { e.stopPropagation(); onDragStart(e); } }}
+        onClick={(e) => {
+          handleClick(e);
+          if (isSelectMode && onSelect) {
+            e.stopPropagation();
+            onSelect(e);
+          }
+        }}
+        onMouseDown={(e) => {
+          if (isSelectMode) {
+            e.stopPropagation();
+            onDragStart(e);
+          }
+        }}
         className={`relative bg-white rounded-xl shadow-md border overflow-hidden transition-shadow ${
-          isSelected
-            ? "ring-2 ring-blue-500 border-blue-400/50 shadow-lg"
-            : "border-gray-200/80"
+          isSelected ? "ring-2 ring-blue-500 border-blue-400/50 shadow-lg" : "border-gray-200/80"
         } ${
           isCommentMode
             ? "cursor-crosshair ring-2 ring-blue-400/20 hover:ring-blue-400/40"
             : isSelectMode
-            ? isDragging ? "cursor-grabbing shadow-xl ring-2 ring-blue-400/30" : "cursor-grab hover:shadow-lg"
-            : ""
+              ? isDragging
+                ? "cursor-grabbing shadow-xl ring-2 ring-blue-400/30"
+                : "cursor-grab hover:shadow-lg"
+              : ""
         }`}
         style={{ width: iteration.width || FRAME_WIDTH, height: frameHeight }}
       >
@@ -169,7 +202,16 @@ setTimeout(reportHeight, 1500);
             <div className="relative w-10 h-10">
               <svg className="w-10 h-10 animate-spin" viewBox="0 0 40 40" fill="none">
                 <circle cx="20" cy="20" r="16" stroke="#e5e7eb" strokeWidth="3" />
-                <circle cx="20" cy="20" r="16" stroke="url(#spinner-gradient)" strokeWidth="3" strokeDasharray="80" strokeDashoffset="60" strokeLinecap="round" />
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  stroke="url(#spinner-gradient)"
+                  strokeWidth="3"
+                  strokeDasharray="80"
+                  strokeDashoffset="60"
+                  strokeLinecap="round"
+                />
                 <defs>
                   <linearGradient id="spinner-gradient" x1="0" y1="0" x2="40" y2="40">
                     <stop offset="0%" stopColor="#8b5cf6" />
@@ -178,9 +220,7 @@ setTimeout(reportHeight, 1500);
                 </defs>
               </svg>
             </div>
-            <span className="text-[12px] font-medium text-gray-400">
-              Generating...
-            </span>
+            <span className="text-[12px] font-medium text-gray-400">Generating...</span>
           </div>
         ) : (
           <iframe
@@ -199,13 +239,14 @@ setTimeout(reportHeight, 1500);
         )}
 
         {/* Comment pins — only visible in comment mode */}
-        {isCommentMode && iteration.comments.map((comment) => (
-          <CommentPin
-            key={comment.id}
-            comment={comment}
-            onClick={() => onClickComment(comment, iteration.id)}
-          />
-        ))}
+        {isCommentMode &&
+          iteration.comments.map((comment) => (
+            <CommentPin
+              key={comment.id}
+              comment={comment}
+              onClick={() => onClickComment(comment, iteration.id)}
+            />
+          ))}
       </div>
     </div>
   );
@@ -213,7 +254,13 @@ setTimeout(reportHeight, 1500);
 
 export { FRAME_WIDTH };
 
-function RemixButton({ iteration, onRemix }: { iteration: DesignIteration; onRemix: (iteration: DesignIteration, prompt: string) => void }) {
+function RemixButton({
+  iteration,
+  onRemix,
+}: {
+  iteration: DesignIteration;
+  onRemix: (iteration: DesignIteration, prompt: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
@@ -241,7 +288,15 @@ function RemixButton({ iteration, onRemix }: { iteration: DesignIteration; onRem
         title="Remix this design"
         data-tour="remix-button"
       >
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          className="w-3.5 h-3.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <polyline points="17 1 21 5 17 9" />
           <path d="M3 11V9a4 4 0 0 1 4-4h14" />
           <polyline points="7 23 3 19 7 15" />
@@ -252,7 +307,9 @@ function RemixButton({ iteration, onRemix }: { iteration: DesignIteration; onRem
 
       {open && (
         <div className="absolute top-full left-0 mt-1 bg-white/70 backdrop-blur-2xl rounded-xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] p-1.5 min-w-[260px] z-30">
-          <div className="px-2.5 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Quick remix</div>
+          <div className="px-2.5 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+            Quick remix
+          </div>
           {REMIX_PRESETS.map((preset) => (
             <button
               key={preset.label}
@@ -263,13 +320,17 @@ function RemixButton({ iteration, onRemix }: { iteration: DesignIteration; onRem
             </button>
           ))}
           <div className="my-1.5 border-t border-gray-200/30" />
-          <div className="px-2.5 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Custom</div>
+          <div className="px-2.5 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+            Custom
+          </div>
           <div className="flex gap-1.5 px-1.5 pb-1">
             <input
               type="text"
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && customPrompt.trim()) handleRemix(customPrompt.trim()); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && customPrompt.trim()) handleRemix(customPrompt.trim());
+              }}
               placeholder="Try it with..."
               className="flex-1 px-3 py-2 rounded-lg text-[13px] bg-black/5 outline-none placeholder-gray-400"
             />
@@ -288,18 +349,27 @@ function RemixButton({ iteration, onRemix }: { iteration: DesignIteration; onRem
 }
 
 const STATUS_COLORS = {
-  waiting: { bg: "bg-gray-400", shadow: "rgba(156,163,175,0.4)", anchor: "bg-gray-400/60", ping: "bg-gray-400/30" },
-  working: { bg: "bg-amber-500", shadow: "rgba(245,158,11,0.4)", anchor: "bg-amber-400/60", ping: "bg-amber-400/30" },
-  done:    { bg: "bg-emerald-500", shadow: "rgba(16,185,129,0.4)", anchor: "bg-emerald-400/60", ping: "bg-emerald-400/30" },
+  waiting: {
+    bg: "bg-gray-400",
+    shadow: "rgba(156,163,175,0.4)",
+    anchor: "bg-gray-400/60",
+    ping: "bg-gray-400/30",
+  },
+  working: {
+    bg: "bg-amber-500",
+    shadow: "rgba(245,158,11,0.4)",
+    anchor: "bg-amber-400/60",
+    ping: "bg-amber-400/30",
+  },
+  done: {
+    bg: "bg-emerald-500",
+    shadow: "rgba(16,185,129,0.4)",
+    anchor: "bg-emerald-400/60",
+    ping: "bg-emerald-400/30",
+  },
 } as const;
 
-function CommentPin({
-  comment,
-  onClick,
-}: {
-  comment: CommentType;
-  onClick: () => void;
-}) {
+function CommentPin({ comment, onClick }: { comment: CommentType; onClick: () => void }) {
   const [isNew, setIsNew] = useState(true);
 
   useEffect(() => {

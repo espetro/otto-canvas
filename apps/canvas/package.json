@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "description": "AI design tool with infinite canvas — vibe coding for design",
+  "type": "module",
   "scripts": {
     "dev": "portless run --name otto next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
-  "type": "module",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
     "@google/genai": "^1.41.0",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@otto/config": "workspace:*",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^3.0.0"
   }
 }

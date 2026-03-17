@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "react", "unicorn", "oxc", "typescript", "nextjs"],
+  "ignorePatterns": [
+    "node_modules/**",
+    ".next/**",
+    ".expo/**",
+    "dist/**",
+    "build/**",
+    ".turbo/**",
+    "**/*.config.ts"
+  ],
+  "rules": {
+    "eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-explicit-any": "warn"
+  }
+}

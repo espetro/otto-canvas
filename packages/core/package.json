@@ -4,15 +4,15 @@
   "private": true,
   "description": "AI-agnostic core business logic for Otto",
   "type": "module",
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
   "exports": {
     "./constants": "./src/constants.ts",
     "./parsers": "./src/parsers.ts",
     "./processors": "./src/processors.ts",
     "./prompts": "./src/prompts.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@otto/types": "workspace:*"

@@ -17,12 +17,16 @@ function buildRevisionPrompt(
   systemPrompt: string | undefined,
   existingHtml: string,
   prompt: string,
-  revision: string
+  revision: string,
 ): string {
-  const customBlock = systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n` : "";
+  const customBlock = systemPrompt
+    ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n`
+    : "";
   const { stripped, restore } = stripBase64Images(existingHtml);
 
-  return JSON.stringify({ stripped, restoreNeeded: true }) + "\n---PROMPT---\n" +
+  return (
+    JSON.stringify({ stripped, restoreNeeded: true }) +
+    "\n---PROMPT---\n" +
     `You are a world-class visual designer. You are EDITING an existing design — not creating a new one.${customBlock}
 
 Here is the EXISTING HTML design:
@@ -53,7 +57,8 @@ ABSOLUTELY NO MOTION — no CSS animations, transitions, @keyframes, hover effec
 SIZE — output a size comment on the FIRST line:
 <!--size:WIDTHxHEIGHT-->
 
-OUTPUT: HTML only — no explanation, no markdown, no code fences. ALL CSS in a <style> tag.`;
+OUTPUT: HTML only — no explanation, no markdown, no code fences. ALL CSS in a <style> tag.`
+  );
 }
 
 function buildNewPrompt(
@@ -61,10 +66,14 @@ function buildNewPrompt(
   critique: string | undefined,
   prompt: string,
   style: string,
-  availableSources: string[]
+  availableSources: string[],
 ): string {
-  const critiqueBlock = critique ? `\n\nIMPROVEMENT FEEDBACK from previous variation (apply these learnings):\n${critique}\n` : "";
-  const customBlock = systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n` : "";
+  const critiqueBlock = critique
+    ? `\n\nIMPROVEMENT FEEDBACK from previous variation (apply these learnings):\n${critique}\n`
+    : "";
+  const customBlock = systemPrompt
+    ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n`
+    : "";
 
   return `You are a world-class visual designer. Generate a stunning, self-contained HTML/CSS design.${customBlock}${critiqueBlock}
 
@@ -86,11 +95,13 @@ REQUIRED ATTRIBUTES on every placeholder:
 - data-img-source = which image API to use: "unsplash", "dalle", or "gemini"
 - data-img-query = SHORT search keywords for Unsplash (3-5 words max)
 
-${availableSources && availableSources.length > 0
+${
+  availableSources && availableSources.length > 0
     ? `AVAILABLE IMAGE SOURCES (choose the best one for each placeholder):
 ${availableSources.includes("unsplash") ? '- "unsplash" — BEST for real photographs\n' : ""}${availableSources.includes("dalle") ? '- "dalle" — BEST for custom illustrations, abstract art\n' : ""}${availableSources.includes("gemini") ? '- "gemini" — BEST for design assets, UI elements\n' : ""}
 Choose the source that best matches what each placeholder needs.`
-    : 'Set data-img-source="gemini" for all placeholders (only source available).'}
+    : 'Set data-img-source="gemini" for all placeholders (only source available).'
+}
 
 Rules:
 - Include 1-6 placeholders per design
@@ -121,11 +132,18 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
-      prompt, style, model, apiKey, systemPrompt, critique,
-      availableSources = [], revision, existingHtml,
-      contextImages = [], anthropicApiUrl,
+      prompt,
+      style,
+      model,
+      apiKey,
+      systemPrompt,
+      critique,
+      availableSources = [],
+      revision,
+      existingHtml,
+      contextImages = [],
+      anthropicApiUrl,
     } = body;
-
 
     const useModel = model || DEFAULT_MODEL;
     const client = getClient(apiKey, anthropicApiUrl);
@@ -137,7 +155,9 @@ export async function POST(req: NextRequest) {
     if (isRevision) {
       const { stripped, restore } = stripBase64Images(existingHtml);
       restoreFn = restore;
-      const customBlock = systemPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n` : "";
+      const customBlock = systemPrompt
+        ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${systemPrompt}\n`
+        : "";
       userContent = `You are a world-class visual designer. You are EDITING an existing design — not creating a new one.${customBlock}
 
 Here is the EXISTING HTML design:
@@ -183,7 +203,9 @@ OUTPUT: HTML only — no explanation, no markdown, no code fences. ALL CSS in a 
 
     // Build message content — text + optional context images
     type MediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
-    type ContentBlock = { type: "text"; text: string } | { type: "image"; source: { type: "base64"; media_type: MediaType; data: string } };
+    type ContentBlock =
+      | { type: "text"; text: string }
+      | { type: "image"; source: { type: "base64"; media_type: MediaType; data: string } };
     const messageContent: ContentBlock[] = [];
 
     // Add user-provided images — these should appear IN the design as <img> tags
@@ -233,7 +255,9 @@ RULES FOR USER IMAGES:
     const stream = client.messages.stream({
       model: useModel,
       max_tokens: 16384,
-      messages: [{ role: "user", content: messageContent.length === 1 ? userContent : messageContent }],
+      messages: [
+        { role: "user", content: messageContent.length === 1 ? userContent : messageContent },
+      ],
     });
 
     // Collect the full response via streaming, then return JSON

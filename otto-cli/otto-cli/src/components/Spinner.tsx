@@ -1,7 +1,7 @@
-import React from 'react';
-import { Text } from 'ink';
+import React from "react";
+import { Text } from "ink";
 
-const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 export function Spinner() {
   const [frame, setFrame] = React.useState(0);

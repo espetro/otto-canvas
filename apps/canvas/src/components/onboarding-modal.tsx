@@ -3,7 +3,12 @@
 import { useState } from "react";
 
 interface OnboardingModalProps {
-  onComplete: (keys: { anthropicKey: string; geminiKey: string; unsplashKey: string; openaiKey: string }) => void;
+  onComplete: (keys: {
+    anthropicKey: string;
+    geminiKey: string;
+    unsplashKey: string;
+    openaiKey: string;
+  }) => void;
   onDismiss: () => void;
 }
 
@@ -24,10 +29,15 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
       <div className="relative bg-white/70 backdrop-blur-2xl rounded-3xl border border-white/60 shadow-[0_24px_80px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.7)] p-8 w-[440px] max-w-[92vw] max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="text-center mb-6">
-          <img src="/otto-icon.jpg" alt="Otto" className="w-16 h-16 mx-auto mb-4 rounded-2xl shadow-lg shadow-violet-500/20 object-cover" />
+          <img
+            src="/otto-icon.jpg"
+            alt="Otto"
+            className="w-16 h-16 mx-auto mb-4 rounded-2xl shadow-lg shadow-violet-500/20 object-cover"
+          />
           <h2 className="text-xl font-bold text-gray-900 mb-1">Welcome to Otto Canvas</h2>
           <p className="text-[13px] text-gray-600 leading-relaxed">
-            AI-powered design tool. Describe any design and Otto generates polished HTML/CSS variations.
+            AI-powered design tool. Describe any design and Otto generates polished HTML/CSS
+            variations.
           </p>
         </div>
 
@@ -76,20 +86,33 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
             className="flex items-center gap-2 text-[11px] font-semibold text-gray-600 uppercase tracking-wider mb-2"
           >
             <span className={`transition-transform ${showImageKeys ? "rotate-90" : ""}`}>▶</span>
-            Image Sources <span className="text-gray-500 font-normal normal-case">(optional — enables real images in designs)</span>
+            Image Sources{" "}
+            <span className="text-gray-500 font-normal normal-case">
+              (optional — enables real images in designs)
+            </span>
           </button>
 
           {showImageKeys && (
             <div className="space-y-3 mt-2">
               <p className="text-[11px] text-gray-500 leading-relaxed">
-                Add any of these keys to enable real images. Your AI model picks the best source for each image automatically.
+                Add any of these keys to enable real images. Your AI model picks the best source for
+                each image automatically.
               </p>
 
               {/* Gemini */}
               <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-200/40">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-semibold text-gray-600">✨ Gemini — design assets & patterns</span>
-                  <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline">Get key →</a>
+                  <span className="text-[11px] font-semibold text-gray-600">
+                    ✨ Gemini — design assets & patterns
+                  </span>
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-blue-500 hover:underline"
+                  >
+                    Get key →
+                  </a>
                 </div>
                 <input
                   type={showGeminiKey ? "text" : "password"}
@@ -103,8 +126,17 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
               {/* DALL-E */}
               <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-200/40">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-semibold text-gray-600">🎨 DALL·E — custom illustrations</span>
-                  <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline">Get key →</a>
+                  <span className="text-[11px] font-semibold text-gray-600">
+                    🎨 DALL·E — custom illustrations
+                  </span>
+                  <a
+                    href="https://platform.openai.com/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-blue-500 hover:underline"
+                  >
+                    Get key →
+                  </a>
                 </div>
                 <input
                   type="password"
@@ -118,8 +150,17 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
               {/* Unsplash */}
               <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-200/40">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-semibold text-gray-600">📷 Unsplash — real photos</span>
-                  <a href="https://unsplash.com/developers" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline">Get key →</a>
+                  <span className="text-[11px] font-semibold text-gray-600">
+                    📷 Unsplash — real photos
+                  </span>
+                  <a
+                    href="https://unsplash.com/developers"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-blue-500 hover:underline"
+                  >
+                    Get key →
+                  </a>
                 </div>
                 <input
                   type="password"
@@ -142,7 +183,15 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
             Skip for now
           </button>
           <button
-            onClick={() => canSubmit && onComplete({ anthropicKey: anthropicKey.trim(), geminiKey: geminiKey.trim(), unsplashKey: unsplashKey.trim(), openaiKey: openaiKey.trim() })}
+            onClick={() =>
+              canSubmit &&
+              onComplete({
+                anthropicKey: anthropicKey.trim(),
+                geminiKey: geminiKey.trim(),
+                unsplashKey: unsplashKey.trim(),
+                openaiKey: openaiKey.trim(),
+              })
+            }
             disabled={!canSubmit}
             className={`text-[13px] font-semibold px-6 py-2.5 rounded-xl transition-all ${
               canSubmit
@@ -156,7 +205,8 @@ export function OnboardingModal({ onComplete, onDismiss }: OnboardingModalProps)
 
         {/* Privacy note */}
         <p className="mt-4 text-[10px] text-gray-500 text-center leading-relaxed">
-          Keys are stored locally in your browser. They are never sent to our servers — API calls go directly to your AI provider and Google.
+          Keys are stored locally in your browser. They are never sent to our servers — API calls go
+          directly to your AI provider and Google.
         </p>
       </div>
     </div>
