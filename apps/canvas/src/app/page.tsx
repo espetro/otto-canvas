@@ -52,8 +52,8 @@ export default function Home() {
   const onboarding = useOnboarding();
   const [showChatPanel, setShowChatPanel] = useState(false);
   const [showTurnList, setShowTurnList] = useState(false);
-  const [orphanedDesignWarning, setOrphanedDesignWarning] = useState<string | null>(null);
   const [selectedTurn, setSelectedTurn] = useState<any>(null);
+  const [isSelectedTurnOrphaned, setIsSelectedTurnOrphaned] = useState(false);
 
   // Load chat panel visibility from localStorage
   useEffect(() => {
@@ -1092,27 +1092,30 @@ export default function Home() {
   const handleSelectTurn = useCallback(
     (turn: { designId?: string }) => {
       if (!turn.designId) {
-        setOrphanedDesignWarning("This turn has no associated design.");
+        setSelectedTurn(turn);
+        setIsSelectedTurnOrphaned(true);
         return;
       }
 
       const design = groups.find((g) => g.id === turn.designId);
       if (!design) {
-        setOrphanedDesignWarning(`Design "${turn.designId}" not found. It may have been deleted.`);
+        setSelectedTurn(turn);
+        setIsSelectedTurnOrphaned(true);
         return;
       }
 
-       canvas.panToDesign(design.position, 500);
+      setIsSelectedTurnOrphaned(false);
+      canvas.panToDesign(design.position, 500);
 
-       setTimeout(() => {
-         setSelectedIds(new Set([design.id]));
-       }, 500);
+      setTimeout(() => {
+        setSelectedIds(new Set([design.id]));
+      }, 500);
 
-       setSelectedTurn(turn);
-       setShowTurnList(false);
-     },
-     [groups, canvas],
-   );
+      setSelectedTurn(turn);
+      setShowTurnList(false);
+    },
+    [groups, canvas],
+  );
 
   const handleRemix = useCallback(
     async (sourceIteration: DesignIteration, remixPrompt: string) => {
@@ -1987,8 +1990,9 @@ export default function Home() {
 
       <ChatDialog
         turn={selectedTurn}
-        isVisible={showTurnList}
-        onClose={() => setSelectedTurn(null)}
+        isVisible={!!selectedTurn}
+        onClose={() => { setSelectedTurn(null); setIsSelectedTurnOrphaned(false); }}
+        isOrphaned={isSelectedTurnOrphaned}
         isTurnListVisible={showTurnList}
       />
 
@@ -2045,32 +2049,10 @@ export default function Home() {
            cachedModels={cachedModels}
            modelsFetchError={modelsFetchError}
          />
-       )}
+        )}
 
-       {/* Orphaned design warning */}
-       {orphanedDesignWarning && (
-         <div className="fixed inset-0 z-[70] flex items-center justify-center">
-           <div
-             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
-             onClick={() => setOrphanedDesignWarning(null)}
-           />
-           <div className="relative bg-white/60 backdrop-blur-2xl rounded-2xl border border-white/60 shadow-[0_24px_80px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.7)] p-8 w-[380px] max-w-[90vw] text-center">
-             <h3 className="text-[15px] font-semibold text-gray-800 mb-2">Design Not Found</h3>
-             <p className="text-[13px] text-gray-600 mb-6">
-               {orphanedDesignWarning}
-             </p>
-             <button
-               onClick={() => setOrphanedDesignWarning(null)}
-               className="text-[13px] font-medium text-white bg-violet-500/90 hover:bg-violet-500 px-5 py-2.5 rounded-xl transition-all"
-             >
-               Dismiss
-             </button>
-           </div>
-         </div>
-       )}
-
-       {/* Reset confirm dialog */}
-      {showResetConfirm && (
+        {/* Reset confirm dialog */}
+       {showResetConfirm && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"

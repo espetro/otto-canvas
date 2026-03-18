@@ -149,7 +149,7 @@ describe('ChatDialog', () => {
       // Assistant message should appear after user message in DOM
       const userElement = userMessage.closest('[data-testid="user-message"]');
       const assistantElement = assistantMessage.closest('[data-testid="assistant-message"]');
-      expect(userElement?.compareDocumentPosition(assistantElement!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(userElement && assistantElement ? userElement.compareDocumentPosition(assistantElement) & Node.DOCUMENT_POSITION_FOLLOWING : false).toBeTruthy();
     });
 
     it('handles missing assistant message gracefully', () => {
