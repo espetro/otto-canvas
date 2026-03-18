@@ -30,6 +30,8 @@ import type {
   CanvasImage,
   ResizeHandle,
 } from "@otto/types";
+import { AgentChatPanel } from "@/components/agent-chat-panel";
+import { useIdeationHistory } from "@/hooks/use-ideation-history";
 import { calculateNewDimensions } from "@/lib/resize-utils";
 
 export default function Home() {
@@ -45,6 +47,24 @@ export default function Home() {
     modelsFetchError,
   } = useSettings();
   const onboarding = useOnboarding();
+  const [showChatPanel, setShowChatPanel] = useState(false);
+
+  // Load chat panel visibility from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("otto-chat-panel-visible");
+      if (stored !== null) {
+        setShowChatPanel(stored === "true");
+      }
+    } catch {}
+  }, []);
+
+  // Save chat panel visibility to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("otto-chat-panel-visible", String(showChatPanel));
+    } catch {}
+  }, [showChatPanel]);
   const canvasElRef = useRef<HTMLDivElement | null>(null);
   const combinedCanvasRef: RefCallback<HTMLDivElement> = useCallback(
     (el) => {
@@ -64,6 +84,7 @@ export default function Home() {
     loaded: projectManagerLoaded,
   } = useProjectManager();
   const { groups, setGroups, resetSession } = usePersistedGroups(currentProjectId);
+  const { messages: ideationMessages, addMessage: addIdeationMessage, lastAssistantMessage } = useIdeationHistory(currentProjectId);
   const groupsRef = useRef(groups);
   useEffect(() => {
     groupsRef.current = groups;
@@ -71,6 +92,8 @@ export default function Home() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [toolMode, setToolMode] = useState<ToolMode>("select");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isIdeating, setIsIdeating] = useState(false);
+  const ideateAbortRef = useRef<AbortController | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
 
   useEffect(() => {
@@ -488,6 +511,7 @@ export default function Home() {
       signal: AbortSignal,
       revisionOpts?: { revision: string; existingHtml: string },
       contextImages?: string[],
+      systemPromptOverride?: string,
     ): Promise<{
       html: string;
       label: string;
@@ -516,7 +540,7 @@ export default function Home() {
           model: settings.model,
           apiKey: settings.apiKey || undefined,
           anthropicApiUrl: settings.anthropicApiUrl || undefined,
-          systemPrompt: settings.systemPrompt || undefined,
+          systemPrompt: systemPromptOverride || settings.systemPrompt || undefined,
           critique,
           availableSources,
           ...(revisionOpts || {}),
@@ -699,6 +723,18 @@ export default function Home() {
       // Auto-include all canvas images as context
       const contextImages =
         canvasImages.length > 0 ? canvasImages.map((img) => img.dataUrl) : undefined;
+
+      // Build enhanced system prompt with ideation context
+      let enhancedSystemPrompt = settings.systemPrompt;
+      if (lastAssistantMessage) {
+        const contextBlock = lastAssistantMessage.content.length > 5000
+          ? lastAssistantMessage.content.slice(0, 5000) + "\n\n[...truncated]"
+          : lastAssistantMessage.content;
+        enhancedSystemPrompt = settings.systemPrompt
+          ? `${settings.systemPrompt}\n\n---\nDESIGN CONTEXT FROM IDEATION:\n${contextBlock}`
+          : `DESIGN CONTEXT FROM IDEATION:\n${contextBlock}`;
+      }
+
       setIsGenerating(true);
       setGenStatus("Planning concepts…");
       const groupId = `group-${Date.now()}`;
@@ -850,6 +886,7 @@ export default function Home() {
                 controller.signal,
                 undefined,
                 contextImages,
+                enhancedSystemPrompt,
               ).then((result) => {
                 completeFrame(iterId, result, positions[i]);
                 return result;
@@ -902,6 +939,7 @@ export default function Home() {
                 controller.signal,
                 undefined,
                 contextImages,
+                enhancedSystemPrompt,
               );
 
               // Update position to use actual dimensions for layout
@@ -988,6 +1026,53 @@ export default function Home() {
     },
     [getGridPositions, settings, canvas, quickMode, runPipelineForFrame, canvasImages, updateCurrentProjectTimestamp],
   );
+
+  const handleIdeate = useCallback(async (prompt: string) => {
+    // Add user message to history
+    addIdeationMessage({ role: "user", content: prompt });
+    setIsIdeating(true);
+
+    // Cancel any in-flight request
+    ideateAbortRef.current?.abort();
+    const controller = new AbortController();
+    ideateAbortRef.current = controller;
+
+    try {
+      const response = await fetch("/api/ideate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...ideationMessages, { role: "user", content: prompt }],
+          model: settings.ideateModel,
+          apiKey: settings.apiKey || undefined,
+          anthropicApiUrl: settings.anthropicApiUrl || undefined,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ideate failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      addIdeationMessage({ role: "assistant", content: data.response });
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
+      const errorMsg = err instanceof Error ? err.message : "Failed to get response";
+      addIdeationMessage({ role: "assistant", content: `⚠ ${errorMsg}. Check your API key and try again.` });
+    } finally {
+      setIsIdeating(false);
+      ideateAbortRef.current = null;
+    }
+  }, [ideationMessages, settings.ideateModel, settings.apiKey, settings.anthropicApiUrl, addIdeationMessage]);
+
+  const handleToggleAgent = useCallback(() => {
+    const newAgent = settings.activeAgent === "build" ? "ideate" : "build";
+    setSettings({ activeAgent: newAgent });
+    if (newAgent === "ideate") {
+      setShowChatPanel(true);
+    }
+  }, [settings.activeAgent, setSettings]);
 
   const handleRemix = useCallback(
     async (sourceIteration: DesignIteration, remixPrompt: string) => {
@@ -1835,11 +1920,20 @@ export default function Home() {
       {!showSidebar && <BurgerButton onClick={() => setShowSidebar(true)} />}
 
       <PromptBar
-        onSubmit={handleGenerate}
-        isGenerating={isGenerating}
+        onSubmit={settings.activeAgent === "ideate" ? handleIdeate : handleGenerate}
+        isGenerating={isGenerating || isIdeating}
         genStatus={genStatus}
         onCancel={() => abortRef.current?.abort()}
         imageCount={canvasImages.length}
+        activeAgent={settings.activeAgent}
+        onToggleAgent={handleToggleAgent}
+      />
+
+      <AgentChatPanel
+        messages={ideationMessages}
+        isLoading={isIdeating}
+        isVisible={showChatPanel}
+        onToggleVisible={() => setShowChatPanel(v => !v)}
       />
 
       {/* Dev mode build badge */}

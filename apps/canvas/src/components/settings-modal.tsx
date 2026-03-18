@@ -418,12 +418,12 @@ export function SettingsModal({
             </p>
           </div>
 
-          {/* Model Selector */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-[12px] font-medium text-gray-500 uppercase tracking-wider">
-                Model
-              </label>
+           {/* Build Model Selector */}
+           <div>
+             <div className="flex items-center justify-between mb-2">
+               <label className="text-[12px] font-medium text-gray-500 uppercase tracking-wider">
+                 Build Model
+               </label>
               {isProbing && (
                 <span className="flex items-center gap-1.5 text-[11px] text-blue-500 font-medium">
                   <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -507,9 +507,100 @@ export function SettingsModal({
                 models available on your key
               </p>
             )}
-          </div>
+           </div>
 
-          {/* Image Sources */}
+           {/* Ideate Model Selector */}
+           <div>
+             <div className="flex items-center justify-between mb-2">
+               <label className="text-[12px] font-medium text-gray-500 uppercase tracking-wider">
+                 Ideate Model
+               </label>
+               {isProbing && (
+                 <span className="flex items-center gap-1.5 text-[11px] text-blue-500 font-medium">
+                   <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                     <circle
+                       cx="12"
+                       cy="12"
+                       r="10"
+                       stroke="currentColor"
+                       strokeWidth="3"
+                       strokeDasharray="60"
+                       strokeDashoffset="20"
+                       strokeLinecap="round"
+                     />
+                   </svg>
+                   Checking models...
+                 </span>
+               )}
+             </div>
+             {modelsFetchError && (
+               <p className="mb-2 text-[11px] text-amber-600/90 bg-amber-50/60 border border-amber-200/50 rounded-lg px-3 py-2">
+                 ⚠ Couldn&apos;t fetch models — showing defaults.
+               </p>
+             )}
+             {cachedModels.length === 0 && !isProbing ? (
+               <p className="text-[11px] text-gray-400 py-1">
+                 {isOwnKey
+                   ? "Connecting to your API…"
+                   : "Add your API key above to see available models."}
+               </p>
+             ) : (
+               <div className="space-y-1">
+                 {cachedModels.map((m) => {
+                   const available = isModelAvailable(m.id);
+                   const isSelected = settings.ideateModel === m.id;
+
+                   return (
+                     <button
+                       key={m.id}
+                       onClick={() => available && onUpdate({ ideateModel: m.id })}
+                       disabled={!available}
+                       className={`w-full flex items-center justify-between px-5 py-3.5 rounded-xl text-left transition-all ${
+                         !available
+                           ? "opacity-35 cursor-not-allowed bg-gray-100/30 border border-transparent"
+                           : isSelected
+                             ? "bg-blue-500/10 border border-blue-300/40 text-gray-800"
+                             : "bg-white/40 border border-transparent hover:bg-white/60 text-gray-600"
+                       }`}
+                     >
+                       <div className="flex items-center gap-2">
+                         <div>
+                           <span className="text-[13px] font-medium">{m.displayName}</span>
+                           <span className="text-[11px] text-gray-500 ml-2">{m.description}</span>
+                         </div>
+                         {!available && isOwnKey && (
+                           <span className="text-[10px] text-gray-500 bg-gray-200/50 px-1.5 py-0.5 rounded">
+                             unavailable
+                           </span>
+                         )}
+                       </div>
+                       {isSelected && available && (
+                         <svg
+                           className="w-4 h-4 text-blue-500 shrink-0"
+                           viewBox="0 0 24 24"
+                           fill="none"
+                           stroke="currentColor"
+                           strokeWidth="2.5"
+                           strokeLinecap="round"
+                           strokeLinejoin="round"
+                         >
+                           <polyline points="20 6 9 17 4 12" />
+                         </svg>
+                       )}
+                     </button>
+                   );
+                 })}
+               </div>
+             )}
+             {isOwnKey && availableModels && cachedModels.length > 0 && (
+               <p className="mt-2 text-[10px] text-gray-500">
+                 {Object.values(availableModels).filter(Boolean).length} of {cachedModels.length}{" "}
+                 models available on your key
+               </p>
+             )}
+           </div>
+
+           {/* Image Sources */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <label className="text-[12px] font-medium text-gray-500 uppercase tracking-wider">
@@ -703,13 +794,15 @@ export function SettingsModal({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200/30 flex items-center justify-between">
-          <span className="text-[11px] text-gray-500">
-            {isOwnKey ? "🔑 Own key" : "🌐 Demo key"} ·{" "}
-            {cachedModels.find((m) => m.id === settings.model)?.displayName || settings.model}
-            {(settings.unsplashKey || settings.openaiKey || settings.geminiKey) &&
-              ` · 🖼️ ${[settings.unsplashKey && "Unsplash", settings.openaiKey && "DALL·E", settings.geminiKey && "Gemini"].filter(Boolean).join(", ")}`}
-          </span>
+         <div className="p-6 border-t border-gray-200/30 flex items-center justify-between">
+           <span className="text-[11px] text-gray-500">
+             {isOwnKey ? "🔑 Own key" : "🌐 Demo key"} ·{" "}
+             {cachedModels.find((m) => m.id === settings.model)?.displayName || settings.model}
+             {" · ◈ "}
+             {cachedModels.find((m) => m.id === settings.ideateModel)?.displayName || settings.ideateModel}
+             {(settings.unsplashKey || settings.openaiKey || settings.geminiKey) &&
+               ` · 🖼️ ${[settings.unsplashKey && "Unsplash", settings.openaiKey && "DALL·E", settings.geminiKey && "Gemini"].filter(Boolean).join(", ")}`}
+           </span>
           <button
             onClick={() => {
               // Auto-save keys if changed

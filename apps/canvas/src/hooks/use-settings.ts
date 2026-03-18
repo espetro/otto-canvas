@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 
+export type AgentType = 'build' | 'ideate';
+
 export interface Settings {
   apiKey: string;
   geminiKey: string;
@@ -9,6 +11,8 @@ export interface Settings {
   openaiKey: string;
   anthropicApiUrl: string;
   model: string;
+  ideateModel: string;
+  activeAgent: AgentType;
   systemPrompt: string;
   systemPromptPreset: string;
   conceptCount: number;
@@ -26,11 +30,12 @@ const STORAGE_KEY = "otto-settings";
 const CACHED_MODELS_KEY = "otto-cached-models";
 const CACHED_MODELS_TIMESTAMP_KEY = "otto-cached-models-timestamp";
 const MODELS_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-const DEFAULT_MODEL = "claude-opus-4-6";
+const DEFAULT_MODEL = "claude-sonnet-4-6";
 
 // Fallback hardcoded models (used when API fetch fails or no key is set)
 export const FALLBACK_MODELS: ModelInfo[] = [
   { id: "claude-opus-4-6", displayName: "Opus 4.6", description: "Best quality, slowest" },
+  { id: "claude-sonnet-4-6", displayName: "Sonnet 4.6", description: "Fast, efficient" },
   { id: "claude-opus-4-5-20250918", displayName: "Opus 4.5", description: "Creative + powerful" },
   { id: "claude-sonnet-4-5", displayName: "Sonnet 4.5", description: "Fast + great" },
   { id: "claude-opus-4", displayName: "Opus 4", description: "High quality, slower" },
@@ -54,12 +59,13 @@ export function useSettings() {
     openaiKey: "",
     anthropicApiUrl: "",
     model: DEFAULT_MODEL,
-
+    ideateModel: "claude-opus-4-6",
+    activeAgent: "build",
     systemPrompt: "",
     systemPromptPreset: "custom",
     conceptCount: 4,
     quickMode: false,
-    showZoomControls: false,
+    showZoomControls: true,
   });
   const [loaded, setLoaded] = useState(false);
   const [cachedModels, setCachedModels] = useState<ModelInfo[]>([]);
@@ -82,6 +88,8 @@ export function useSettings() {
           openaiKey: parsed.openaiKey || "",
           anthropicApiUrl: parsed.anthropicApiUrl || "",
           model: parsed.model || DEFAULT_MODEL,
+          ideateModel: parsed.ideateModel || "claude-opus-4-6",
+          activeAgent: parsed.activeAgent || "build",
 
           systemPrompt: parsed.systemPrompt || "",
           systemPromptPreset: parsed.systemPromptPreset || "custom",

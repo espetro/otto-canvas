@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import type { AgentType } from "../hooks/use-settings";
 
 const HISTORY_KEY = "otto-prompt-history";
 const MAX_HISTORY = 50;
@@ -26,6 +27,8 @@ interface PromptBarProps {
   genStatus?: string;
   onCancel?: () => void;
   imageCount?: number;
+  activeAgent: AgentType;
+  onToggleAgent: () => void;
 }
 
 export function PromptBar({
@@ -34,6 +37,8 @@ export function PromptBar({
   genStatus,
   onCancel,
   imageCount = 0,
+  activeAgent,
+  onToggleAgent,
 }: PromptBarProps) {
   const [value, setValue] = useState("");
   const [history, setHistory] = useState<string[]>([]);
@@ -193,6 +198,19 @@ export function PromptBar({
               </div>
             )}
 
+            {/* Agent toggle pill */}
+            <button
+              onClick={onToggleAgent}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all shrink-0 mr-2 ${
+                activeAgent === 'build'
+                  ? 'bg-gray-900/10 text-gray-600 hover:bg-gray-900/15'
+                  : 'bg-violet-500/10 text-violet-700 hover:bg-violet-500/15 border border-violet-300/30'
+              }`}
+              title={`Switch to ${activeAgent === 'build' ? 'Ideate' : 'Build'} agent`}
+            >
+              {activeAgent === 'build' ? '✦ Build' : '◈ Ideate'}
+            </button>
+
             <textarea
               ref={inputRef}
               value={value}
@@ -202,7 +220,7 @@ export function PromptBar({
                 autoResize();
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Describe a design..."
+              placeholder={activeAgent === 'build' ? 'Describe a design...' : 'Plan your design...'}
               rows={1}
               className="flex-1 px-0 py-2 text-[15px] text-gray-800 placeholder-gray-400/70 bg-transparent outline-none resize-none leading-[22px]"
               style={{ maxHeight: 22 * 6 }}
