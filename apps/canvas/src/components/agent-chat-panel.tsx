@@ -42,7 +42,7 @@ export function AgentChatPanel({
       </button>
 
       {isVisible && (
-        <div className="fixed bottom-[100px] left-4 z-[60] w-[280px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white/20 backdrop-blur-3xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] overflow-hidden">
+        <div className="fixed bottom-[100px] left-4 z-[60] w-[240px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white/20 backdrop-blur-3xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/20">
             <span className="px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-700 text-[11px] font-medium border border-violet-300/30">
               ◈ Ideate

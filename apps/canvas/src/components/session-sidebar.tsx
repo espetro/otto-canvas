@@ -137,7 +137,7 @@ export function SessionSidebar({
 
   return (
     <div
-      className={`fixed top-3 left-3 bottom-3 w-[280px] max-w-[85vw] z-50 bg-white/20 backdrop-blur-3xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] rounded-[20px] flex flex-col overflow-hidden transition-transform duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+      className={`fixed top-3 left-3 bottom-3 w-[280px] max-w-[85vw] z-[70] bg-white/20 backdrop-blur-3xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] rounded-[20px] flex flex-col overflow-hidden transition-transform duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
         open ? "translate-x-0" : "-translate-x-[120%]"
       }`}
     >
