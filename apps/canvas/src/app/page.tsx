@@ -33,6 +33,9 @@ import type {
 import { AgentChatPanel } from "@/components/agent-chat-panel";
 import { useIdeationHistory } from "@/hooks/use-ideation-history";
 import { calculateNewDimensions } from "@/lib/resize-utils";
+import { TurnListPanel } from "@/components/turn-list-panel";
+import { ChatDialog } from "@/components/chat-dialog";
+import { groupMessagesByTurns } from "@/utils/turn-utils";
 
 export default function Home() {
   const canvas = useCanvas();
@@ -48,6 +51,9 @@ export default function Home() {
   } = useSettings();
   const onboarding = useOnboarding();
   const [showChatPanel, setShowChatPanel] = useState(false);
+  const [showTurnList, setShowTurnList] = useState(false);
+  const [orphanedDesignWarning, setOrphanedDesignWarning] = useState<string | null>(null);
+  const [selectedTurn, setSelectedTurn] = useState<any>(null);
 
   // Load chat panel visibility from localStorage
   useEffect(() => {
@@ -84,7 +90,7 @@ export default function Home() {
     loaded: projectManagerLoaded,
   } = useProjectManager();
   const { groups, setGroups, resetSession } = usePersistedGroups(currentProjectId);
-  const { messages: ideationMessages, addMessage: addIdeationMessage, lastAssistantMessage } = useIdeationHistory(currentProjectId);
+  const { messages: ideationMessages, addMessage: addIdeationMessage, updateMessage: updateIdeationMessage, lastAssistantMessage } = useIdeationHistory(currentProjectId);
   const groupsRef = useRef(groups);
   useEffect(() => {
     groupsRef.current = groups;
@@ -735,50 +741,59 @@ export default function Home() {
           : `DESIGN CONTEXT FROM IDEATION:\n${contextBlock}`;
       }
 
-      setIsGenerating(true);
-      setGenStatus("Planning concepts…");
-      const groupId = `group-${Date.now()}`;
+       setIsGenerating(true);
+       setGenStatus("Planning concepts…");
+       const groupId = `group-${Date.now()}`;
 
-      try {
-        abortRef.current?.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
+       try {
+         abortRef.current?.abort();
+         const controller = new AbortController();
+         abortRef.current = controller;
 
-        let iterationCount = settings.conceptCount || 4;
-        let concepts: string[] = [];
+         let iterationCount = settings.conceptCount || 4;
+         let concepts: string[] = [];
 
-        try {
-          const planRes = await fetch("/api/plan", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              prompt,
-              count: iterationCount,
-              apiKey: settings.apiKey || undefined,
-              anthropicApiUrl: settings.anthropicApiUrl || undefined,
-              model: settings.model,
-            }),
-            signal: controller.signal,
-          });
-          if (planRes.ok) {
-            const plan = await planRes.json();
-            concepts = (plan.concepts || []).slice(0, iterationCount);
-          }
-        } catch {
-          // Planning failed — continue with defaults
-        }
+         try {
+           const planRes = await fetch("/api/plan", {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({
+               prompt,
+               count: iterationCount,
+               apiKey: settings.apiKey || undefined,
+               anthropicApiUrl: settings.anthropicApiUrl || undefined,
+               model: settings.model,
+             }),
+             signal: controller.signal,
+           });
+           if (planRes.ok) {
+             const plan = await planRes.json();
+             concepts = (plan.concepts || []).slice(0, iterationCount);
+           }
+         } catch {
+           // Planning failed — continue with defaults
+         }
 
-        const positions = getGridPositions(iterationCount);
+         const positions = getGridPositions(iterationCount);
 
-        const newGroup: GenerationGroup = {
-          id: groupId,
-          prompt,
-          iterations: [],
-          position: positions[0],
-          createdAt: Date.now(),
-        };
+         const newGroup: GenerationGroup = {
+           id: groupId,
+           prompt,
+           iterations: [],
+           position: positions[0],
+           createdAt: Date.now(),
+         };
 
-        setGroups((prev) => [...prev, newGroup]);
+         setGroups((prev) => [...prev, newGroup]);
+
+         // Update the last ideation message with the design ID
+         if (ideationMessages.length > 0) {
+           const lastIndex = ideationMessages.length - 1;
+           const lastMessage = ideationMessages[lastIndex];
+           if (!lastMessage.designId) {
+             updateIdeationMessage(lastIndex, { designId: groupId });
+           }
+         }
 
         // Track completed frame dimensions for sequential positioning
         const completedFrames: { x: number; y: number; w: number; h: number }[] = [];
@@ -1024,12 +1039,12 @@ export default function Home() {
         updateCurrentProjectTimestamp();
       }
     },
-    [getGridPositions, settings, canvas, quickMode, runPipelineForFrame, canvasImages, updateCurrentProjectTimestamp],
+    [getGridPositions, settings, canvas, quickMode, runPipelineForFrame, canvasImages, updateCurrentProjectTimestamp, ideationMessages, updateIdeationMessage],
   );
 
-  const handleIdeate = useCallback(async (prompt: string) => {
+  const handleIdeate = useCallback(async (prompt: string, designId?: string) => {
     // Add user message to history
-    addIdeationMessage({ role: "user", content: prompt });
+    addIdeationMessage({ role: "user", content: prompt, designId });
     setIsIdeating(true);
 
     // Cancel any in-flight request
@@ -1055,11 +1070,11 @@ export default function Home() {
       }
 
       const data = await response.json();
-      addIdeationMessage({ role: "assistant", content: data.response });
+      addIdeationMessage({ role: "assistant", content: data.response, designId });
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
       const errorMsg = err instanceof Error ? err.message : "Failed to get response";
-      addIdeationMessage({ role: "assistant", content: `⚠ ${errorMsg}. Check your API key and try again.` });
+      addIdeationMessage({ role: "assistant", content: `⚠ ${errorMsg}. Check your API key and try again.`, designId });
     } finally {
       setIsIdeating(false);
       ideateAbortRef.current = null;
@@ -1073,6 +1088,31 @@ export default function Home() {
       setShowChatPanel(true);
     }
   }, [settings.activeAgent, setSettings]);
+
+  const handleSelectTurn = useCallback(
+    (turn: { designId?: string }) => {
+      if (!turn.designId) {
+        setOrphanedDesignWarning("This turn has no associated design.");
+        return;
+      }
+
+      const design = groups.find((g) => g.id === turn.designId);
+      if (!design) {
+        setOrphanedDesignWarning(`Design "${turn.designId}" not found. It may have been deleted.`);
+        return;
+      }
+
+       canvas.panToDesign(design.position, 500);
+
+       setTimeout(() => {
+         setSelectedIds(new Set([design.id]));
+       }, 500);
+
+       setSelectedTurn(turn);
+       setShowTurnList(false);
+     },
+     [groups, canvas],
+   );
 
   const handleRemix = useCallback(
     async (sourceIteration: DesignIteration, remixPrompt: string) => {
@@ -1934,6 +1974,22 @@ export default function Home() {
         isLoading={isIdeating}
         isVisible={showChatPanel}
         onToggleVisible={() => setShowChatPanel(v => !v)}
+        onToggleTurnList={() => setShowTurnList(v => !v)}
+        isTurnListVisible={showTurnList}
+      />
+
+      <TurnListPanel
+        turns={groupMessagesByTurns(ideationMessages)}
+        onSelectTurn={handleSelectTurn}
+        isVisible={showTurnList}
+        onClose={() => setShowTurnList(false)}
+      />
+
+      <ChatDialog
+        turn={selectedTurn}
+        isVisible={showTurnList}
+        onClose={() => setSelectedTurn(null)}
+        isTurnListVisible={showTurnList}
       />
 
       {/* Dev mode build badge */}
@@ -1977,20 +2033,43 @@ export default function Home() {
         }}
       />
 
-      {/* Settings modal */}
-      {showSettings && (
-        <SettingsModal
-          settings={settings}
-          onUpdate={setSettings}
-          onClose={() => setShowSettings(false)}
-          isOwnKey={isOwnKey}
-          availableModels={availableModels}
-          isProbing={isProbing}
-          cachedModels={cachedModels}
-          modelsFetchError={modelsFetchError}
-        />
-      )}
-      {/* Reset confirm dialog */}
+       {/* Settings modal */}
+       {showSettings && (
+         <SettingsModal
+           settings={settings}
+           onUpdate={setSettings}
+           onClose={() => setShowSettings(false)}
+           isOwnKey={isOwnKey}
+           availableModels={availableModels}
+           isProbing={isProbing}
+           cachedModels={cachedModels}
+           modelsFetchError={modelsFetchError}
+         />
+       )}
+
+       {/* Orphaned design warning */}
+       {orphanedDesignWarning && (
+         <div className="fixed inset-0 z-[70] flex items-center justify-center">
+           <div
+             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+             onClick={() => setOrphanedDesignWarning(null)}
+           />
+           <div className="relative bg-white/60 backdrop-blur-2xl rounded-2xl border border-white/60 shadow-[0_24px_80px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.7)] p-8 w-[380px] max-w-[90vw] text-center">
+             <h3 className="text-[15px] font-semibold text-gray-800 mb-2">Design Not Found</h3>
+             <p className="text-[13px] text-gray-600 mb-6">
+               {orphanedDesignWarning}
+             </p>
+             <button
+               onClick={() => setOrphanedDesignWarning(null)}
+               className="text-[13px] font-medium text-white bg-violet-500/90 hover:bg-violet-500 px-5 py-2.5 rounded-xl transition-all"
+             >
+               Dismiss
+             </button>
+           </div>
+         </div>
+       )}
+
+       {/* Reset confirm dialog */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center">
           <div
