@@ -4,11 +4,12 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
-import { Logs, ChevronUp } from "lucide-react";
+import { Logs, ChevronUp, MessageSquareText } from "lucide-react";
 
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  designId?: string;
 }
 
 interface AgentChatPanelProps {
@@ -16,6 +17,8 @@ interface AgentChatPanelProps {
   isLoading?: boolean;
   isVisible: boolean;
   onToggleVisible: () => void;
+  onToggleTurnList?: () => void;
+  isTurnListVisible?: boolean;
 }
 
 export function AgentChatPanel({
@@ -23,6 +26,8 @@ export function AgentChatPanel({
   isLoading = false,
   isVisible,
   onToggleVisible,
+  onToggleTurnList,
+  isTurnListVisible = false,
 }: AgentChatPanelProps) {
   const [showHistory, setShowHistory] = useState(false);
 
@@ -39,6 +44,14 @@ export function AgentChatPanel({
         <Logs className="w-4 h-4" />
         <span>Agent log</span>
         <ChevronUp className={`w-4 h-4 transition-transform duration-200 ${isVisible ? '' : 'rotate-180'}`} />
+      </button>
+
+      <button
+        onClick={onToggleTurnList}
+        className="fixed bottom-[52px] left-4 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-[20px] text-[13px] font-medium bg-white/20 backdrop-blur-3xl border border-white/30 text-gray-700 hover:bg-white/30 transition-all shadow-[0_8px_40px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]"
+      >
+        <MessageSquareText className="w-4 h-4" />
+        <span>View conversation</span>
       </button>
 
       {isVisible && (
