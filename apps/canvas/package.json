@@ -32,6 +32,11 @@
   },
   "devDependencies": {
     "@otto/config": "workspace:*",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.2",
+    "@vitejs/plugin-react": "^6.0.1",
+    "happy-dom": "^20.8.4",
+    "jsdom": "^29.0.0",
     "typescript": "5.9.3",
     "vitest": "^3.0.0"
   }
