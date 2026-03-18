@@ -157,6 +157,46 @@ export function useCanvas() {
     [],
   );
 
+  const panToDesign = useCallback(
+    (position: Point, duration: number = 500) => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // Calculate target offset to center the design position in viewport
+      const targetOffset = {
+        x: vw / 2 - position.x * state.scale,
+        y: vh / 2 - position.y * state.scale,
+      };
+
+      // Animate pan over duration (ms)
+      const startTime = Date.now();
+      const startOffset = { ...state.offset };
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing: ease-out-cubic
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+        setState({
+          ...state,
+          offset: {
+            x: startOffset.x + (targetOffset.x - startOffset.x) * easeProgress,
+            y: startOffset.y + (targetOffset.y - startOffset.y) * easeProgress,
+          },
+        });
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    },
+    [state],
+  );
+
   return {
     offset: state.offset,
     scale: state.scale,
@@ -170,5 +210,6 @@ export function useCanvas() {
     zoomIn,
     zoomOut,
     zoomToFit,
+    panToDesign,
   };
 }
