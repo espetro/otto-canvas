@@ -5,11 +5,13 @@ import { useState, useCallback, useEffect } from "react";
 export interface IdeationMessage {
   role: "user" | "assistant";
   content: string;
+  designId?: string;
 }
 
 export interface UseIdeationHistoryReturn {
   messages: IdeationMessage[];
   addMessage: (message: IdeationMessage) => void;
+  updateMessage: (index: number, updates: Partial<IdeationMessage>) => void;
   clearMessages: () => void;
   lastAssistantMessage: IdeationMessage | undefined;
 }
@@ -79,6 +81,20 @@ export function useIdeationHistory(
     [persistMessages],
   );
 
+  // Update a message at a specific index
+  const updateMessage = useCallback(
+    (index: number, updates: Partial<IdeationMessage>) => {
+      setMessagesRaw((prev) => {
+        if (index < 0 || index >= prev.length) return prev;
+        const next = [...prev];
+        next[index] = { ...next[index], ...updates };
+        persistMessages(next);
+        return next;
+      });
+    },
+    [persistMessages],
+  );
+
   // Clear all messages
   const clearMessages = useCallback(() => {
     setMessagesRaw([]);
@@ -96,6 +112,7 @@ export function useIdeationHistory(
   return {
     messages,
     addMessage,
+    updateMessage,
     clearMessages,
     lastAssistantMessage,
   };
